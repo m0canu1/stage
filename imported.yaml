@@ -1,0 +1,17 @@
+network:
+  ethernets:
+    ens33:
+      dhcp4: true
+    ens38:
+      dhcp4: true
+      dhcp6: false
+      gateway4: 172.16.128.1
+    ens39:
+      dhcp4: true
+      dhcp6: false
+      gateway4: 172.16.128.1
+    ens40:
+      dhcp4: true
+      dhcp6: false
+      gateway4: 172.16.128.1
+  version: 2
