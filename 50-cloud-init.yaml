@@ -1,0 +1,11 @@
+network:
+  ethernets:
+    ens33:
+      dhcp4: true
+    ens38:
+      dhcp4: no
+    ens39:
+      dhcp4: no
+    ens40:
+      dhcp4: no
+  version: 2
