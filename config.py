@@ -44,5 +44,5 @@ while menu == -1:
 
 
 
-inserisci sottorete management
-quanti team vuoi? inserisci indirizzo
+# inserisci sottorete management
+# quanti team vuoi? inserisci indirizzo
