@@ -10,4 +10,7 @@ network:
     ens38:
       dhcp4: false
       address: 10.10.6.203
+    ens 39:
+      dhcp4:
+      address:
   version: 2

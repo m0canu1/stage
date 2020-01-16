@@ -1,17 +1,44 @@
 network:
   ethernets:
     ens33:
-      dhcp4: true
+      addresses:
+      - 172.168.0.5/24
+      dhcp4: false
+      dhcp6: false
+      gateway4: 172.168.0.1
     ens38:
-      dhcp4: true
+      addresses:
+      - 172.168.1.1/24
+      dhcp4: false
       dhcp6: false
-      gateway4: 172.16.128.1
     ens39:
-      dhcp4: true
+      addresses:
+      - 172.168.2.1/24
+      dhcp4: false
       dhcp6: false
-      gateway4: 172.16.128.1
+      routes:
+      - to: 172.168.3.0/24
+        via: 172.168.0.1
+      - to: 172.168.4.0/24
+        via: 172.168.0.1
     ens40:
-      dhcp4: true
+      addresses:
+      - 172.168.3.1/24
+      dhcp4: false
       dhcp6: false
-      gateway4: 172.16.128.1
+      routes:
+      - to: 172.168.2.0/24
+        via: 172.168.0.1
+      - to: 172.168.4.0/24
+        via: 172.168.0.1
+    ens41:
+      addresses:
+      - 172.168.4.1/24
+      dhcp4: false
+      dhcp6: false
+      routes:
+      - to: 172.168.2.0/24
+        via: 172.168.0.1
+      - to: 172.168.3.0/24
+        via: 172.168.0.1
   version: 2
