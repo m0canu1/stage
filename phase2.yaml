@@ -11,36 +11,49 @@ network:
       addresses:
       - 192.168.0.5/24
       gateway4: 192.168.0.1
-    ens38: #management
+    ens38: #management #serve? tanto si collega tramite ssh
       addresses: 
       - 192.168.1.1/24
       dhcp4: false
       dhcp6: false
-      routes:
-      - to: 192.168.1.0/24 #destinazione è la sottorete
-        via: 0.0.0.0
+      # routes:
+      # - to: 192.168.0.1/24 
+        # via: 192.168.1.0
+        # on-link: true
     ens39: #team1
       addresses:
       - 192.168.2.1/24
       dhcp4: false
       dhcp6: false
       routes:
-      - to: 192.168.2.0/24 #destinazione è la sottorete
-        via: 0.0.0.0
+      - to: 192.168.3.0/24 #to team2
+        via: 192.168.0.1
+        # on-link: true
+      - to: 192.168.4.0/24 #to team3
+        via: 192.168.0.1
+        # on-link: true
     ens40: #team2
       addresses:
       - 192.168.3.1/24
       dhcp4: false
       dhcp6: false
       routes:
-      - to: 192.168.3.0/24 #destinazione è la sottorete
-        via: 0.0.0.0
+      - to: 192.168.2.0/24 #to team1
+        via: 192.168.0.1
+        # on-link: true
+      - to: 192.168.4.0/24 #to team3
+        via: 192.168.0.1
+        # on-link: true
     ens41: #team3
       addresses:
       - 192.168.4.1/24
       dhcp4: false
       dhcp6: false
       routes:
-      - to: 192.168.4.0/24 #destinazione è la sottorete
-        via: 0.0.0.0
+      - to: 192.168.2.0/24 #to team1
+        via: 192.168.0.1
+        # on-link: true
+      - to: 192.168.3.0/24 #to team2
+        via: 192.168.0.1
+        # on-link: true
   version: 2
