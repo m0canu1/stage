@@ -9,7 +9,7 @@ network:
       dhcp4: false
       dhcp6: false
       addresses:
-      - 172.168.0.5/24
+      - 172.168.0.2/24
       gateway4: 172.168.0.1
     ens38: #management #serve? tanto si collega tramite ssh
       dhcp4: false
