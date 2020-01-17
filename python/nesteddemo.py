@@ -107,7 +107,8 @@ def add_entry(keystring, dictionary, entry_name, entry_value=None):
 	        lastfoundindex = keystring.find('.', lastfoundindex)+1
 	        counter += 1
 
-
+print(d)
 add_entry('fruits.orange', d, 'in_stock', True)
 print(
 	F"Demo add_entry()! Added a new entry called in_stock to fruits.orange, it's value is: {get_value('fruits.orange.in_stock',d)}")
+print(d)

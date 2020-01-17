@@ -1,0 +1,37 @@
+network:
+  ethernets:
+    ens33:
+      addresses:
+      - 2/24
+      dhcp4: false
+      dhcp6: false
+    ens38:
+      addresses:
+      - 3/24
+      dhcp4: false
+      dhcp6: false
+    ens39:
+    - dhcp4: false
+      dhcp6: false
+    ens40:
+    - dhcp4: false
+      dhcp6: false
+    ens41:
+    - dhcp4: false
+      dhcp6: false
+    ens42:
+    - dhcp4: false
+      dhcp6: false
+    ens43:
+    - dhcp4: false
+      dhcp6: false
+    ens44:
+    - dhcp4: false
+      dhcp6: false
+    ens45:
+    - dhcp4: false
+      dhcp6: false
+    ens46:
+    - dhcp4: false
+      dhcp6: false
+  version: 2
