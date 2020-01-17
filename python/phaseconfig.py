@@ -35,6 +35,7 @@ def phase_one(nteams):
 
 def phase_two(config2, nteams):
     
+    # TODO problema col for
     for i in range(0,nteams):
         address = input("""Team %d address: """ %(i))
         config2['network']['ethernets']['ens%d'%(first_team_interface+i)]['addresses'] = [address + '/24']
