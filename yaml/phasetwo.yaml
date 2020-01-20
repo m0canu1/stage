@@ -7,25 +7,25 @@ network:
       dhcp6: false
     ens38:
       addresses:
-      - 8/24
+      - 7/24
       dhcp4: false
       dhcp6: false
     ens39:
-    - dhcp4: false
-      dhcp6: false
+      addresses:
+      - 1.2/24
+      routes:
+      - to: 1.0/24
+        via: 0.0.0.0
     ens40:
-    - dhcp4: false
-      dhcp6: false
+      addresses:
+      - 3.3/24
+      routes:
+      - to: 3.0/24
+        via: 0.0.0.0
     ens41:
     - dhcp4: false
       dhcp6: false
     ens42:
-    - dhcp4: false
-      dhcp6: false
-    ens43:
-    - dhcp4: false
-      dhcp6: false
-    ens44:
     - dhcp4: false
       dhcp6: false
   version: 2

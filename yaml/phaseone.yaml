@@ -7,7 +7,7 @@ network:
       dhcp6: false
     ens38:
       addresses:
-      - 8/24
+      - 7/24
       dhcp4: false
       dhcp6: false
     ens39:
@@ -20,12 +20,6 @@ network:
     - dhcp4: false
       dhcp6: false
     ens42:
-    - dhcp4: false
-      dhcp6: false
-    ens43:
-    - dhcp4: false
-      dhcp6: false
-    ens44:
     - dhcp4: false
       dhcp6: false
   version: 2
