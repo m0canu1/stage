@@ -81,8 +81,6 @@ def phase_two():
     yaml.dump(config, open(f2, 'w'))
     remove_quotes(f2)
 
-    # return config2
-
 
 def remove_quotes(fname):
     file = open(fname, 'r')

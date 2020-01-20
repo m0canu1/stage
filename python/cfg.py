@@ -1,3 +1,4 @@
+import psutil
 import yaml
 import sys
 import json
@@ -5,6 +6,7 @@ from phaseconfig import phase_one, phase_two, edit_vr_address, edit_mma_address,
 
 
 menu = -1
+
 print("Make a choice:")
 while menu == -1:
     menu = int(input("""

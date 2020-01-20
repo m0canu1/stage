@@ -2,12 +2,12 @@ network:
   ethernets:
     ens33:
       addresses:
-      - 172.168.1.2/24
+      - 172.165.23.56/24
       dhcp4: false
       dhcp6: false
     ens38:
       addresses:
-      - 172.168.2.1/24
+      - 554.45.84.45/24
       dhcp4: false
       dhcp6: false
     ens39:
@@ -26,6 +26,12 @@ network:
     - dhcp4: false
       dhcp6: false
     ens44:
+    - dhcp4: false
+      dhcp6: false
+    ens45:
+    - dhcp4: false
+      dhcp6: false
+    ens46:
     - dhcp4: false
       dhcp6: false
     version: 2
