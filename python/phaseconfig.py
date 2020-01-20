@@ -40,9 +40,16 @@ def phase_two(config2, nteams):
     for i in range(0, nteams):
         team_address = input("""Team %d address: """ % (i+1))
         addresses = {'addresses': [str(team_address + '/24')]}
-        routes = [{'to': address_to(team_address) + '/24', 'via': default_gateway}]
-        config2['network']['ethernets']['ens' + str(first_team_interface+i)] = addresses
-        config2['network']['ethernets']['ens' + str(first_team_interface+i)]['routes'] = routes
+        routes = [
+            {'to': address_to(team_address) + '/24', 'via': default_gateway}]
+        config2['network']['ethernets']['ens' +
+                                        str(first_team_interface+i)] = addresses
+        config2['network']['ethernets']['ens' +
+                                        str(first_team_interface+i)]['routes'] = routes
+        config2['network']['ethernets']['ens' +
+                                        str(first_team_interface+i)]['dhcp4'] = False
+        config2['network']['ethernets']['ens' +
+                                        str(first_team_interface+i)]['dhcp6'] = False
 
     return config2
 
