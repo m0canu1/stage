@@ -227,11 +227,15 @@ def choose_teams_number_support(maxteams):
     competition_config = load_from_config()
     nteams = -1
     while (nteams < 0 or nteams > maxteams):
-        nteams = int(input('Numero di squadre (max %d): ' % (maxteams)))
-        if (nteams > maxteams):
-            print('ERRORE, numero di squadre troppo alto. Riprova!')
-        elif (nteams < 0):
-            print('ERRORE, numero di squadre troppo basso. Riprova!')
+        try:
+            nteams = int(input('Numero di squadre (max %d): ' % (maxteams)))
+            if (nteams > maxteams):
+                print('ERRORE, numero di squadre troppo alto. Riprova!')
+            elif (nteams < 0):
+                print('ERRORE, numero di squadre troppo basso. Riprova!')
+        except ValueError:
+            print("Input errato")
+        
 
     # salva il numero di squadre nel file di configurazione
     competition_config['NumberOfTeams'] = nteams
