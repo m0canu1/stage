@@ -1,6 +1,5 @@
 import netifaces
-from utils import *
-
+from utils import get_interfaces_list_noloopback, choose_interface, set_teams_number, set_teams_addresses, set_address
 # dizionario per la configurazione netplan
 config = {}
 config['network'] = {}
@@ -27,12 +26,20 @@ mngmt = choose_interface(1, if_list)
 if_list.pop(if_list.index(mngmt))
 
 # Scelta del numero di squadre
-choose_teams_number(len(if_list))
+set_teams_number(len(if_list))
 
 # Indirizzo del Virtual Router
-# show_current_address(0)  # ritorna True se l'utente vuole modificare l'indirizzo, altrimenti false
-set_address(0)
+vr = set_address(0)
 
 # Indirizzo della Macchina di Management
-# show_current_address(1) #ritorna True se l'utente vuole modificare l'indirizzo, altrimenti false
-set_address(1)
+mngmt = set_address(1)
+
+# if_list rimane con le interfacce disponibili per le squadre
+set_teams_addresses(if_list, vr, mngmt)
+
+# creazione del file netplan
+
+# FASE 1
+    
+
+# FASE 2

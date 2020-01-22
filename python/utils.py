@@ -4,26 +4,15 @@ import netifaces
 
 configfile = "/home/alex/Desktop/git/stage/config/competition.config"
 netplanfile = "/home/alex/Desktop/git/stage/yaml/50-cloud-init.yaml"
-f2 = "/home/alex/Desktop/git/stage/yaml/phasetwo.yaml"
 
-default_config = {'network': {'ethernets': {'ens33': {'dhcp4': False, 'dhcp6': False},
-                                            'ens38': {'dhcp4': False, 'dhcp6': False},
-                                            'version': 2}}}
-
+# dizionario per il file di configurazione
 competition_config = {}
-# competition_config['VirtualRouterAddress'] = {}
-
-# competition_config = {'VirtualRouterAddress': 0,
-#                       'VirtualRouterInterface': 0,
-#                       'ManagementMachineAddress': 0,
-#                       'ManagementMachineInterface': 0,
-#                       'NumberOfTeams': 0}
 
 # dizionario per la configurazione netplan
-config = {}
-config['network'] = {}
-config['network']['ethernets'] = {}
-config['network']['ethernets']['version'] = {2}
+netplan_config = {}
+netplan_config['network'] = {}
+netplan_config['network']['ethernets'] = {}
+netplan_config['network']['ethernets']['version'] = {2}
 
 
 def yes_or_no():
@@ -37,29 +26,38 @@ def yes_or_no():
     if Fl == 'n':
         return False
 
+#  
+# def address_to(address):
+#     i = len(address) - 1
+#     while (address[i]) != '.':
+#         address = address[:-1]
+#         i = i-1
+#     return address + '0'
 
-def address_to(address):
-    i = len(address) - 1
-    while (address[i]) != '.':
-        address = address[:-1]
-        i = i-1
-    return address + '0'
-
-
+# 
 def load_from_config():
     with open(configfile) as f:
         try:
-            config = json.load(f)
-            return config
-        except ValueError: 
+            temp_config = json.load(f)
+            return temp_config
+        except ValueError:
             return competition_config
 
-
+# 
 def save_to_config(config):
     with open(configfile, 'w') as f:
         json.dump(config, f)
-    config
 
+# 
+def load_from_netplanconfig():
+    with open(netplanfile) as f:
+        try:
+            temp_config = json.load(f)
+            return temp_config
+        except ValueError:
+            return netplan_config
+
+# 
 def save_to_netplanconfig(config):
     with open(netplanfile, 'w') as f:
         yaml.safe_dump(config, f)
@@ -75,14 +73,17 @@ def set_address_support(machine):
         while address == '':
             address = str(input("""Virtual Router address: """))
         competition_config["VirtualRouterAddress"] = address
+
     else:
         while address == '':
             address = str(input("""ManagementMachineAddress: """))
         competition_config["ManagementMachineAddress"] = address
-    
+
     save_to_config(competition_config)
 
+    return address
 
+# 
 def set_address(machine):
     competition_config = load_from_config()
 
@@ -91,100 +92,51 @@ def set_address(machine):
             print("L'indirizzo corrente del Virtual Router è: %s" %
                   (competition_config["VirtualRouterAddress"]))
             if yes_or_no():
-                set_address_support(0)
+                return set_address_support(0)
+            else:
+                return competition_config["VirtualRouterAddress"]
         else:
-            set_address_support(0)
+            return set_address_support(0)
 
     else:
         if("ManagementMachineAddress" in competition_config):
             print("L'indirizzo corrente della Macchina di Management è: %s" %
                   (competition_config["ManagementMachineAddress"]))
             if yes_or_no():
-                set_address_support(1)
+                return set_address_support(1)
+            else:
+                return competition_config["ManagementMachineAddress"]
         else:
-            set_address_support(1)
+            return set_address_support(1)
 
+# def phase_two():
+#     with open(configfile) as f:
+#         competition_config = json.load(f)
+#     nteams = competition_config["NumberOfTeams"]
+#     vr_address = competition_config["VirtualRouterAddress"] + '/24'
+#     mm_address = competition_config["ManagementMachineAddress"] + '/24'
 
+#     netplan_config = yaml.load(open(f1, 'r'), Loader=yaml.FullLoader)
 
-def phase_one():
+#     netplan_config['network']['ethernets']['ens33']['addresses'] = [vr_address]
+#     netplan_config['network']['ethernets']['ens38']['addresses'] = [mm_address]
 
-    address = str(input("""Virtual Router address: """))
-    default_config['network']['ethernets']['ens33']['addresses'] = [
-        address + '/24']
-    competition_config['VirtualRouterAddress'] = address
+#     for i in range(0, nteams):
+#         team_address = input("""Team %d address: """ % (i+1))
+#         addresses = {'addresses': [str(team_address + '/24')]}
+#         routes = [
+#             {'to': address_to(team_address) + '/24', 'via': default_gateway}]
+#         netplan_config['network']['ethernets']['ens' +
+#                                        str(first_team_interface+i)] = addresses
+#         netplan_config['network']['ethernets']['ens' +
+#                                        str(first_team_interface+i)]['routes'] = routes
+#         netplan_config['network']['ethernets']['ens' +
+#                                        str(first_team_interface+i)]['dhcp4'] = False
+#         netplan_config['network']['ethernets']['ens' +
+#                                        str(first_team_interface+i)]['dhcp6'] = False
 
-    address = str(input("""Management Machine address: """))
-    default_config['network']['ethernets']['ens38']['addresses'] = [
-        address + '/24']
-    competition_config['ManagementMachineAddress'] = address
-
-    with open(configfile, 'w') as f:
-        json.dump(competition_config, f)
-
-
-
-def phase_two():
-    with open(configfile) as f:
-        competition_config = json.load(f)
-    nteams = competition_config["NumberOfTeams"]
-    vr_address = competition_config["VirtualRouterAddress"] + '/24'
-    mma_address = competition_config["ManagementMachineAddress"] + '/24'
-
-    config = yaml.load(open(f1, 'r'), Loader=yaml.FullLoader)
-
-    config['network']['ethernets']['ens33']['addresses'] = [vr_address]
-    config['network']['ethernets']['ens38']['addresses'] = [mma_address]
-
-    for i in range(0, nteams):
-        team_address = input("""Team %d address: """ % (i+1))
-        addresses = {'addresses': [str(team_address + '/24')]}
-        routes = [
-            {'to': address_to(team_address) + '/24', 'via': default_gateway}]
-        config['network']['ethernets']['ens' +
-                                       str(first_team_interface+i)] = addresses
-        config['network']['ethernets']['ens' +
-                                       str(first_team_interface+i)]['routes'] = routes
-        config['network']['ethernets']['ens' +
-                                       str(first_team_interface+i)]['dhcp4'] = False
-        config['network']['ethernets']['ens' +
-                                       str(first_team_interface+i)]['dhcp6'] = False
-
-    yaml.dump(config, open(f2, 'w'))
-    remove_quotes(f2)
-
-
-def remove_quotes(fname):
-    file = open(fname, 'r')
-    data = file.read()
-    data = data.replace("'", "")
-    file = open(fname, 'w')
-    file.write(data)
-
-
-def edit_vr_address():
-    with open(configfile, 'r') as f:
-        conf = json.load(f)
-    new_val = str(input("Address of Virtual Router: "))
-    conf["VirtualRouterAddress"] = new_val
-    with open(configfile, 'w') as f:
-        json.dump(conf, f)
-
-
-def edit_mma_address():
-    with open(configfile, 'r') as f:
-        conf = json.load(f)
-    new_val = str(input("Address of Management machine: "))
-    conf["ManagementMachineAddress"] = new_val
-    with open(configfile, 'w') as f:
-        json.dump(conf, f)
-
-
-def set_teams_number(nteams):
-    with open(configfile, 'r') as f:
-        conf = json.load(f)
-    conf["NumberOfTeams"] = nteams
-    with open(configfile, 'w') as f:
-        json.dump(conf, f)
+#     yaml.dump(netplan_config, open(f2, 'w'))
+#     remove_quotes(f2)
 
 
 def get_interfaces_list_noloopback():
@@ -222,8 +174,41 @@ def choose_interface(machine, if_list):
     save_to_config(competition_config)
     return interface
 
+# riceve una lista delle interfacce rimanenti insieme all'indirizzo del virtual router
+# e dell'interfaccia della macchina di management
+def set_teams_addresses(if_list, vr_address, mm_address):
+    """
+    Imposta gli indirizzi delle interfacce rimanenti
 
-def choose_teams_number_support(maxteams):
+    Parameters:
+    if_list (list): Lista delle interfacce rimanenti.
+    vr_address (str): Indirizzo del Virtual Router
+    mm_address (str): Indirizzo dell'interfaccia per la Macchina di Management
+    """
+    temp_config = load_from_config()
+    nteams = temp_config['NumberOfTeams']
+
+    vr = vr_address.split('.')[2]
+    mm = mm_address.split('.')[2]
+
+    ip = 1 #base of the second-last 8 bit of the IP
+    # Assegna tutte le interfacce rimanenti
+
+    for i in range(1, nteams+1):
+        temp_config["Team%dInterface" % (i)] = if_list[i-1] #assegno l'interfaccia
+        flag = False
+        while not flag:
+            if (ip not in (vr, mm)):
+                temp_config["Team%dAddress" % (i)] = '172.168.%d.100' % (ip)
+                flag = True
+            ip += 1
+
+    save_to_config(temp_config)
+
+
+
+# 
+def set_teams_number_support(maxteams):
     competition_config = load_from_config()
     nteams = -1
     while (nteams < 0 or nteams > maxteams):
@@ -235,21 +220,29 @@ def choose_teams_number_support(maxteams):
                 print('ERRORE, numero di squadre troppo basso. Riprova!')
         except ValueError:
             print("Input errato")
-        
 
     # salva il numero di squadre nel file di configurazione
     competition_config['NumberOfTeams'] = nteams
 
     save_to_config(competition_config)
 
-def choose_teams_number(maxteams):
+
+def set_teams_number(maxteams):
     competition_config = load_from_config()
 
     if("NumberOfTeams" in competition_config):
         print("L'attuale numero di squadre è: %s" %
               (competition_config["NumberOfTeams"]))
         if yes_or_no():
-            choose_teams_number_support(maxteams)
+            set_teams_number_support(maxteams)
     else:
-        choose_teams_number_support(maxteams)
+        set_teams_number_support(maxteams)
 
+
+# rimuove le virgolette
+def remove_quotes(fname):
+    file = open(fname, 'r')
+    data = file.read()
+    data = data.replace("'", "")
+    file = open(fname, 'w')
+    file.write(data)
