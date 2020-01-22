@@ -12,7 +12,7 @@ competition_config = {}
 netplan_config = {}
 netplan_config['network'] = {}
 netplan_config['network']['ethernets'] = {}
-netplan_config['network']['ethernets']['version'] = {2}
+netplan_config['network']['ethernets']['version'] = 2
 
 
 def yes_or_no():
@@ -62,9 +62,65 @@ def save_to_netplanconfig(config):
     with open(netplanfile, 'w') as f:
         yaml.safe_dump(config, f)
 
+# recupera gli indirizzi di Router e interfaccia per management
+# def get_address(machine):
+
+
+# CREAZIONE DEL FILE NETPLAN PER LA FASE UNO
+def phase_one():
+    config = load_from_config()
+
+    vr_address = config['VirtualRouterAddress'] + '/24'
+    vr_interface = config['VirtualRouterInterface']
+    mm_address = config['ManagementMachineAddress'] + '/24'
+    mm_interface = config['ManagementMachineInterface']
+
+    if_list = get_interfaces_list_noloopback()
+    if_list.pop(if_list.index(vr_interface))
+    if_list.pop(if_list.index(mm_interface))
+
+    netplan_config['network']['ethernets'][vr_interface] = {}
+    netplan_config['network']['ethernets'][mm_interface] = {}
+
+    netplan_config['network']['ethernets'][vr_interface]['dhcp4'] = False
+    netplan_config['network']['ethernets'][vr_interface]['dhcp6'] = False
+
+    netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
+    netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
+
+    netplan_config['network']['ethernets'][vr_interface]['addresses'] = [vr_address]
+    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [mm_address]
+
+
+    for interface in if_list:
+        netplan_config['network']['ethernets'][interface] = {}
+        netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+        netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+
+    save_to_netplanconfig(netplan_config)
+
+
+
+
+# CREAZIONE DEL FILE DI NETPLAN PER LA FASE DUE
+def phase_two():
+    netplan_config = load_from_netplanconfig()
+    config = load_from_config()
+
+    nteams = config['NumberOfTeams']
+
+    for i in range (1, nteams+1):
+        interface = config['Team%dInterface' %(i)]
+        address = config['Team%dAddress' % (i)]
+
+        netplan_config['network']['ethernets'][interface] = {}
+        netplan_config['network']['ethernets'][interface]['addresses'] = address
+
+    save_to_netplanconfig(netplan_config)
 
 # 0 for Virtual Router
 # 1 for Management
+# TODO ridurre accessi al file richiedendo la configurazione come parametro
 def set_address_support(machine):
     competition_config = load_from_config()
     address = ''
@@ -109,35 +165,6 @@ def set_address(machine):
         else:
             return set_address_support(1)
 
-# def phase_two():
-#     with open(configfile) as f:
-#         competition_config = json.load(f)
-#     nteams = competition_config["NumberOfTeams"]
-#     vr_address = competition_config["VirtualRouterAddress"] + '/24'
-#     mm_address = competition_config["ManagementMachineAddress"] + '/24'
-
-#     netplan_config = yaml.load(open(f1, 'r'), Loader=yaml.FullLoader)
-
-#     netplan_config['network']['ethernets']['ens33']['addresses'] = [vr_address]
-#     netplan_config['network']['ethernets']['ens38']['addresses'] = [mm_address]
-
-#     for i in range(0, nteams):
-#         team_address = input("""Team %d address: """ % (i+1))
-#         addresses = {'addresses': [str(team_address + '/24')]}
-#         routes = [
-#             {'to': address_to(team_address) + '/24', 'via': default_gateway}]
-#         netplan_config['network']['ethernets']['ens' +
-#                                        str(first_team_interface+i)] = addresses
-#         netplan_config['network']['ethernets']['ens' +
-#                                        str(first_team_interface+i)]['routes'] = routes
-#         netplan_config['network']['ethernets']['ens' +
-#                                        str(first_team_interface+i)]['dhcp4'] = False
-#         netplan_config['network']['ethernets']['ens' +
-#                                        str(first_team_interface+i)]['dhcp6'] = False
-
-#     yaml.dump(netplan_config, open(f2, 'w'))
-#     remove_quotes(f2)
-
 
 def get_interfaces_list_noloopback():
     # salva in una lista il nome di tutte le interfacce disponibili
@@ -148,31 +175,6 @@ def get_interfaces_list_noloopback():
 
     return if_list
 
-
-def choose_interface(machine, if_list):
-    print('Scegli tra le seguenti:\n')
-    print(', '.join(if_list).center(100)+'\n')
-
-    if (machine == 0):
-        str = 'Virtual Router'
-    else:
-        str = 'Macchina di Management'
-
-    interface = input('Interfaccia per %s: ' % (str))
-    while (interface not in if_list):
-        print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
-        print(', '.join(if_list).center(100)+'\n')
-        interface = input('Riprova: ')
-
-    competition_config = load_from_config()
-    # salva le interfacce nel file di configurazione
-    if (machine == 0):
-        competition_config['VirtualRouterInterface'] = interface
-    else:
-        competition_config['ManagementMachineInterface'] = interface
-
-    save_to_config(competition_config)
-    return interface
 
 # riceve una lista delle interfacce rimanenti insieme all'indirizzo del virtual router
 # e dell'interfaccia della macchina di management
@@ -188,8 +190,8 @@ def set_teams_addresses(if_list, vr_address, mm_address):
     temp_config = load_from_config()
     nteams = temp_config['NumberOfTeams']
 
-    vr = vr_address.split('.')[2]
-    mm = mm_address.split('.')[2]
+    vr = int(vr_address.split('.')[2])
+    mm = int(mm_address.split('.')[2])
 
     ip = 1 #base of the second-last 8 bit of the IP
     # Assegna tutte le interfacce rimanenti
@@ -205,6 +207,61 @@ def set_teams_addresses(if_list, vr_address, mm_address):
 
     save_to_config(temp_config)
 
+
+# 
+def choose_interface_support(machine, if_list):
+    temp_config = load_from_config()
+    print('Scegli tra le seguenti:\n')
+    print(', '.join(if_list).center(100)+'\n')
+
+    interface = ''
+
+    if (machine == 0):
+        while (interface == '' or interface not in if_list):
+            interface = input('Interfaccia per VIRTUAL ROUTER: ' % (str))
+            print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
+            print(', '.join(if_list).center(100)+'\n')
+            temp_config['VirtualRouterInterface'] = interface
+    else:
+        interface = input('Interfaccia per MANAGEMENT: ' % (str))
+        print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
+        print(', '.join(if_list).center(100)+'\n')
+        temp_config['ManagementMachineInterface'] = interface
+
+    save_to_config(temp_config)
+    return interface
+
+# 
+def choose_interface(machine, if_list):
+    temp_config = load_from_config()
+    
+    if (machine == 0):
+        str = 'VirtualRouterInterface'
+    else:
+        str = 'ManagementMachineInterface'
+
+    if (machine == 0):
+        str = 'VirtualRouterInterface'
+        if ("VirtualRouterInterface" in temp_config):
+            print("L'interfaccia corrente del Virtual Router è: %s" %
+                  (temp_config[str]))
+            if yes_or_no():
+                return choose_interface_support(0, if_list)
+            else:
+                return temp_config[str]
+        else:
+            return choose_interface_support(0, if_list)
+    else:
+        str = 'ManagementMachineInterface'
+        if ("VirtualRouterInterface" in temp_config):
+            print("L'interfaccia corrente della Management Machine è: %s" %
+                  (temp_config[str]))
+            if yes_or_no():
+                return choose_interface_support(1, if_list)
+            else:
+                return temp_config[str]
+        else:
+            return choose_interface_support(1, if_list)
 
 
 # 
@@ -226,7 +283,7 @@ def set_teams_number_support(maxteams):
 
     save_to_config(competition_config)
 
-
+# 
 def set_teams_number(maxteams):
     competition_config = load_from_config()
 

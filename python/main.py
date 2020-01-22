@@ -1,19 +1,8 @@
 import netifaces
-from utils import get_interfaces_list_noloopback, choose_interface, set_teams_number, set_teams_addresses, set_address
-# dizionario per la configurazione netplan
-config = {}
-config['network'] = {}
-config['network']['ethernets'] = {}
-config['network']['ethernets']['version'] = {2}
-
-
+import sys
+from utils import get_interfaces_list_noloopback, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 
 if_list = get_interfaces_list_noloopback()
-
-# aggiunta delle interfacce a config
-for interface in if_list:
-    config['network']['ethernets'][interface] = {}
-print(config)
 
 print('\nImpostazione delle interfacce.\n')
 
@@ -37,9 +26,24 @@ mngmt = set_address(1)
 # if_list rimane con le interfacce disponibili per le squadre
 set_teams_addresses(if_list, vr, mngmt)
 
-# creazione del file netplan
 
-# FASE 1
-    
-
-# FASE 2
+# Scelta delle fasi
+# TODO menu
+menu = -1
+print("Make a choice:")
+while menu == -1:
+    menu = int(input("""
+        1. Phase 1 (only management allowed).
+        2. Phase 2 (All teams allowed).
+        0. Quit.
+        """))
+    if (menu) == 1:
+        phase_one()
+        print("Created configuration for Phase 1")
+    elif (menu) == 2:
+        phase_two()
+        print("Created configuration for Phase 2")
+    elif (menu) == 0:
+        sys.exit
+    else:
+        print("Your choice (%d) is wrong. Please, try again." % (menu))
