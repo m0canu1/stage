@@ -1,11 +1,11 @@
-import yaml
+import ipaddress
 import json
+
 import netifaces
+import yaml
 
 configfile = "/home/alex/Desktop/git/stage/config/competition.config"
 netplanfile = "/home/alex/Desktop/git/stage/yaml/50-cloud-init.yaml"
-
-competition_config = {}
 
 
 # dizionario per la configurazione netplan
@@ -35,25 +35,19 @@ def yes_or_no():
 #     return address + '0'
 
 
-def load_from_config():
-    with open(configfile) as f:
-        try:
-            temp_config = json.load(f)
-            return temp_config
-        except ValueError:
-            return competition_config
 #
-# def load_from_config():
-#     try:
-#         with open(configfile) as f:
-#             try:
-#                 config = json.load(f)
-#                 return config
-#             except ValueError:
-#                 config = {}
-#                 return config
-#     except FileNotFoundError:
-#         print('Nessun file di configurazione trovato')
+def load_from_config():
+    try:
+        with open(configfile) as f:
+            try:
+                config = json.load(f)
+                return config
+            except:
+                config = {}
+                return config
+    except:
+        config = {}
+        return config
 
 
 #
@@ -62,20 +56,28 @@ def save_to_config(config):
         json.dump(config, f)
 
 #
+
+
 def load_from_netplanconfig():
     with open(netplanfile) as f:
         try:
-            config = json.load(f)
+            config = yaml.load(f, Loader=yaml.FullLoader)
             return config
-        except ValueError:
-            return netplan_config
+        except yaml.scanner.ScannerError:
+            return False
+            # print('ERRORE, file di configurazione .yaml corrotto. Riconfigurare fase 1')
+
 
 #
+
+
 def save_to_netplanconfig(config):
     with open(netplanfile, 'w') as f:
         yaml.safe_dump(config, f)
 
 # lettura da config
+
+
 def read_config():
     try:
         with open(configfile) as f:
@@ -113,7 +115,9 @@ def read_config():
                       (i, interface, address))
             print('\n')
     except FileNotFoundError:
-        print('Nessun file di configurazione trovato')
+        print('Nessun file di configurazione trovato.')
+    except (json.decoder.JSONDecodeError, KeyError):
+        print('Il file di configurazione è vuoto o corrotto.')
 
 
 # recupera gli indirizzi di Router e interfaccia per management
@@ -147,47 +151,67 @@ def phase_one():
     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
         mm_address]
 
-    for interface in if_list:
-        netplan_config['network']['ethernets'][interface] = {}
-        netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-        netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+    # for interface in if_list:
+    #     netplan_config['network']['ethernets'][interface] = {}
 
     save_to_netplanconfig(netplan_config)
-
+    return 'FASE 1: OK'
 
 # CREAZIONE DEL FILE DI NETPLAN PER LA FASE DUE
+
+
 def phase_two():
-    phase_one() #TODO perché con questo funziona?
+    # phase_one()
     netplan_config = load_from_netplanconfig()
+    # se il file .yaml è corrotto, lo corregge ripetendo la fase 1
+    # e ricaricando la configurazione
+    if(not netplan_config):
+        phase_one()
+        netplan_config = load_from_netplanconfig()
+
     config = load_from_config()
 
     nteams = config['NumberOfTeams']
 
     for i in range(1, nteams+1):
-        interface = config['Team%dInterface' % (i)]
-        address = config['Team%dAddress' % (i)]
+        try:
+            interface = config['Team%dInterface' % (i)]
+            address = config['Team%dAddress' % (i)] + '/24'
 
-        netplan_config['network']['ethernets'][interface] = {}
-        netplan_config['network']['ethernets'][interface]['addresses'] = address
-
-    save_to_netplanconfig(netplan_config)
+            netplan_config['network']['ethernets'][interface] = {}
+            netplan_config['network']['ethernets'][interface]['addresses'] = [address]
+            netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+            netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+            save_to_netplanconfig(netplan_config)
+        except:
+            return 'FASE 2: ERRORE'
+    # save_to_netplanconfig(netplan_config)
+    return 'FASE 2: OK'
 
 # 0 for Virtual Router
 # 1 for Management
 
 
 def set_address_support(machine, config):
-    address = ''
-
     if (machine == 0):
-        while address == '':
+        flag = False
+        while not flag:
             address = str(input("""Virtual Router address: """))
-        config["VirtualRouterAddress"] = address
+            if check_ip(address):
+                config["VirtualRouterAddress"] = address
+                flag = True
+            else:
+                print('ERRORE, non è un indirizzo valido.')
 
     else:
-        while address == '':
+        flag = False
+        while not flag:
             address = str(input("""Management Address: """))
-        config["ManagementMachineAddress"] = address
+            if check_ip(address):
+                config["ManagementMachineAddress"] = address
+                flag = True
+            else:
+                print('ERRORE, non è un indirizzo valido.')
 
     save_to_config(config)
 
@@ -200,7 +224,7 @@ def set_address(machine):
     config = load_from_config()
 
     if (machine == 0):
-        if("VirtualRouterAddress" in config):
+        if("VirtualRouterAddress" in config and check_ip(config['VirtualRouterAddress'])):
             print("L'indirizzo corrente del Virtual Router è: %s" %
                   (config["VirtualRouterAddress"]))
             if yes_or_no():
@@ -211,7 +235,7 @@ def set_address(machine):
             return set_address_support(0, config)
 
     else:
-        if("ManagementMachineAddress" in config):
+        if("ManagementMachineAddress" in config and check_ip(config['VirtualRouterAddress'])):
             print("L'indirizzo corrente della Macchina di Management è: %s" %
                   (config["ManagementMachineAddress"]))
             if yes_or_no():
@@ -246,25 +270,32 @@ def set_teams_addresses(if_list, vr_address, mm_address):
     config = load_from_config()
     nteams = config['NumberOfTeams']
 
-    vr = int(vr_address.split('.')[2])
-    mm = int(mm_address.split('.')[2])
+    try:
+        vr = int(vr_address.split('.')[2])
+        mm = int(mm_address.split('.')[2])
 
-    ip = 1  # base of the second-last 8 bit of the IP
-    # Assegna tutte le interfacce rimanenti
+        ip = 1  # base of the second-last 8 bit of the IP
+        # Assegna tutte le interfacce rimanenti
 
-    for i in range(1, nteams+1):
-        config["Team%dInterface" % (i)] = if_list[i-1]  # assegno l'interfaccia
-        flag = False
-        while not flag:
-            if (ip not in (vr, mm)):
-                config["Team%dAddress" % (i)] = '172.168.%d.100' % (ip)
-                flag = True
-            ip += 1
+        for i in range(1, nteams+1):
+            config["Team%dInterface" %
+                   (i)] = if_list[i-1]  # assegno l'interfaccia
+            flag = False
+            while not flag:
+                if (ip not in (vr, mm)):
+                    config["Team%dAddress" % (i)] = '172.168.%d.100' % (ip)
+                    flag = True
+                ip += 1
 
-    save_to_config(config)
-
+        save_to_config(config)
+        return True
+    except IndexError:
+        # print('ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
+        return False
 
 #
+
+
 def choose_interface_support(machine, if_list, config):
     print('Scegli tra le seguenti:\n')
     print(', '.join(if_list).center(100)+'\n')
@@ -272,14 +303,14 @@ def choose_interface_support(machine, if_list, config):
     interface = ''
 
     if (machine == 0):
-        interface = input('Interfaccia per VIRTUAL ROUTER: ')
         while (interface == '' or interface not in if_list):
+            interface = input('Interfaccia per VIRTUAL ROUTER: ')
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
         config['VirtualRouterInterface'] = interface
     else:
-        interface = input('Interfaccia per MANAGEMENT: ')
         while (interface == '' or interface not in if_list):
+            interface = input('Interfaccia per MANAGEMENT: ')
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
         config['ManagementMachineInterface'] = interface
@@ -299,8 +330,7 @@ def choose_interface(machine, if_list):
         str = 'ManagementMachineInterface'
 
     if (machine == 0):
-        str = 'VirtualRouterInterface'
-        if ("VirtualRouterInterface" in config):
+        if (config and str in config):  # se dic vuoto ritorna false
             print("L'interfaccia corrente del Virtual Router è: %s" %
                   (config[str]))
             if yes_or_no():
@@ -310,8 +340,7 @@ def choose_interface(machine, if_list):
         else:
             return choose_interface_support(0, if_list, config)
     else:
-        str = 'ManagementMachineInterface'
-        if ("ManagementMachineInterface" in config):
+        if (config and str in config):  # se dic vuoto ritorna false
             print("L'interfaccia corrente della Management Machine è: %s" %
                   (config[str]))
             if yes_or_no():
@@ -362,3 +391,11 @@ def remove_quotes(fname):
     data = data.replace("'", "")
     file = open(fname, 'w')
     file.write(data)
+
+
+def check_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except ValueError:
+        return False

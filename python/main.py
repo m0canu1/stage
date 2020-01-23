@@ -5,8 +5,6 @@ from utils import get_interfaces_list_noloopback, read_config, choose_interface,
 vr = ''
 mngmt = ''
 
-# TODO problema con 
-
 def change_config():
     # Imposta l'interfaccia per il Virtual Router e rimuove interfaccia scelta
     vr = choose_interface(0, if_list)
@@ -26,7 +24,7 @@ def change_config():
     mngmt = set_address(1)
 
     # if_list rimane con le interfacce disponibili per le squadre
-    set_teams_addresses(if_list, vr, mngmt)
+    return set_teams_addresses(if_list, vr, mngmt)
 
 def first_menu():
     menu = -1
@@ -50,23 +48,27 @@ def second_menu():
     # Scelta delle fasi
     menu = -1
     while menu == -1:
-        menu = int(input("""
-            1. Phase 1 (only management allowed).
-            2. Phase 2 (All teams allowed).
-            0. Go Back.
-            """))
-        if (menu) == 1:
-            change_config()
-            phase_one()
-            print("Created configuration for Phase 1")
-        elif (menu) == 2:
-            change_config()
-            phase_two()
-            print("Created configuration for Phase 2")
-        elif (menu) == 0:
-            first_menu()
-        else:
-            print("Your choice (%d) is wrong. Please, try again." % (menu))
+        try:
+            menu = int(input("""
+                1. Phase 1 (only management allowed).
+                2. Phase 2 (All teams allowed).
+                0. Go Back.
+                """))
+            if (menu) == 1:
+                if(change_config()):
+                    print(phase_one())
+                else:
+                    print(
+                        'ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
+            elif (menu) == 2:
+                change_config()
+                print(phase_two())
+            elif (menu) == 0:
+                first_menu()
+            else:
+                print("Your choice (%d) doesn't exit. Please, try again." % (menu))
+        except:
+            print('ERRORE di input.')
 
 if_list = get_interfaces_list_noloopback()
 first_menu()
