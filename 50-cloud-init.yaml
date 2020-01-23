@@ -2,23 +2,23 @@ network:
   ethernets:
     enp2s0f2:
       addresses:
-      - 172.168.1.100/24
+      - 172.168.3.100/24
       dhcp4: false
       dhcp6: false
     version: 2
     vmnet2:
       addresses:
-      - 1.2.3.4/24
+      - 1.1.1.1/24
       dhcp4: false
       dhcp6: false
     vmnet3:
       addresses:
-      - 2.3.4.5/24
+      - 2.2.2.2/24
       dhcp4: false
       dhcp6: false
     vmnet4:
       addresses:
-      - 172.168.2.100/24
+      - 172.168.4.100/24
       dhcp4: false
       dhcp6: false
     vmnet5:

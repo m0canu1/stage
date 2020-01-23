@@ -4,8 +4,8 @@ import json
 import netifaces
 import yaml
 
-configfile = "/home/alex/Desktop/git/stage/config/competition.config"
-netplanfile = "/home/alex/Desktop/git/stage/yaml/50-cloud-init.yaml"
+configfile = "competition.config"
+netplanfile = "50-cloud-init.yaml"
 
 
 # dizionario per la configurazione netplan
@@ -59,14 +59,18 @@ def save_to_config(config):
 
 
 def load_from_netplanconfig():
-    with open(netplanfile) as f:
-        try:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-            return config
-        except yaml.scanner.ScannerError:
-            return False
-            # print('ERRORE, file di configurazione .yaml corrotto. Riconfigurare fase 1')
-
+    try:
+        with open(netplanfile) as f:
+            try:
+                config = yaml.load(f, Loader=yaml.FullLoader)
+                return config
+            except yaml.scanner.ScannerError:
+                return False
+                # print('ERRORE, file di configurazione .yaml corrotto. Riconfigurare fase 1')
+    except FileNotFoundError:
+        with open(netplanfile, 'w') as f:
+            yaml.safe_dump(netplan_config, f)
+        return False
 
 #
 
@@ -300,19 +304,21 @@ def choose_interface_support(machine, if_list, config):
     print('Scegli tra le seguenti:\n')
     print(', '.join(if_list).center(100)+'\n')
 
-    interface = ''
+    # interface = ''
 
     if (machine == 0):
-        while (interface == '' or interface not in if_list):
-            interface = input('Interfaccia per VIRTUAL ROUTER: ')
+        interface = input('Interfaccia per VIRTUAL ROUTER: ')
+        while (interface not in if_list):
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
+            interface = input('Interfaccia per VIRTUAL ROUTER: ')
         config['VirtualRouterInterface'] = interface
     else:
-        while (interface == '' or interface not in if_list):
-            interface = input('Interfaccia per MANAGEMENT: ')
+        interface = input('Interfaccia per MANAGEMENT: ')
+        while (interface not in if_list):
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
+            interface = input('Interfaccia per MANAGEMENT: ')
         config['ManagementMachineInterface'] = interface
 
     save_to_config(config)

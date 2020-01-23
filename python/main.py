@@ -67,7 +67,7 @@ def second_menu():
                 first_menu()
             else:
                 print("Your choice (%d) doesn't exit. Please, try again." % (menu))
-        except:
+        except ValueError:
             print('ERRORE di input.')
 
 if_list = get_interfaces_list_noloopback()
