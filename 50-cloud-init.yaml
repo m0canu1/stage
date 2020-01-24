@@ -6,33 +6,13 @@ network:
       dhcp4: false
       dhcp6: false
     version: 2
-    vmnet2:
-      addresses:
-      - 1.1.1.1/24
-      dhcp4: false
-      dhcp6: false
     vmnet3:
       addresses:
       - 2.2.2.2/24
       dhcp4: false
       dhcp6: false
-    vmnet4:
-      addresses:
-      - 172.168.4.100/24
-      dhcp4: false
-      dhcp6: false
     vmnet5:
       addresses:
-      - 172.168.5.100/24
-      dhcp4: false
-      dhcp6: false
-    vmnet8:
-      addresses:
-      - 172.168.6.100/24
-      dhcp4: false
-      dhcp6: false
-    wlp3s0:
-      addresses:
-      - 172.168.7.100/24
+      - 1.1.1.1/24
       dhcp4: false
       dhcp6: false

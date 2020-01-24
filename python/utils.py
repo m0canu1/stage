@@ -165,13 +165,16 @@ def phase_one():
 
 
 def phase_two():
-    # phase_one()
+    # ripete la fase uno in ogni caso per accertarsi che il file .yaml sia
+    # scritto correttamente e coerentemente con il file di configurazione (in caso di file corrotto,
+    # scritto male, o scritto bene ma con parametri sbagliati non contenuti nel file di configurazione)
+    phase_one()
     netplan_config = load_from_netplanconfig()
     # se il file .yaml è corrotto, lo corregge ripetendo la fase 1
     # e ricaricando la configurazione
-    if(not netplan_config):
-        phase_one()
-        netplan_config = load_from_netplanconfig()
+    # if(not netplan_config):
+    #     phase_one()
+    #     netplan_config = load_from_netplanconfig()
 
     config = load_from_config()
 

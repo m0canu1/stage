@@ -29,19 +29,23 @@ def change_config():
 def first_menu():
     menu = -1
     while menu == -1 or menu == 1:
-        menu = int(input("""
-            1. Visualizzare l'attuale configurazione.
-            2. Scelta delle fasi
-            0. Quit.
-        """))
-        if menu == 1:
-            read_config()
-        elif menu == 2:
-            second_menu()
-        elif (menu) == 0:
-            sys.exit
-        else:
-            print("Your choice (%d) is wrong. Please, try again." % (menu))
+        try:
+            menu = int(input("""
+                1. Visualizzare l'attuale configurazione.
+                2. Scelta delle fasi
+                0. Quit.
+            """))
+            if menu == 1:
+                read_config()
+            elif menu == 2:
+                second_menu()
+            elif (menu) == 0:
+                sys.exit
+            else:
+                print("Your choice (%d) is wrong. Please, try again." % (menu))
+        except ValueError:
+            print('ERRORE di input.')
+
 
 
 def second_menu():
