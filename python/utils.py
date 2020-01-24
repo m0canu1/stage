@@ -53,7 +53,11 @@ def load_from_config():
 #
 def save_to_config(config):
     with open(configfile, 'w') as f:
-        json.dump(config, f)
+        # json.dump(config, f)
+        # json.dump(json.dumps(config, sort_keys=True, indent=4), f)
+        f.write(json.dumps(config, indent=4, sort_keys=True))
+        f.close()
+
 
 #
 
