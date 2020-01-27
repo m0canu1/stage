@@ -11,8 +11,8 @@ netplanfile = "50-cloud-init.yaml"
 # dizionario per la configurazione netplan
 netplan_config = {}
 netplan_config['network'] = {}
+netplan_config['network']['version'] = 2
 netplan_config['network']['ethernets'] = {}
-netplan_config['network']['ethernets']['version'] = 2
 
 
 def yes_or_no():
