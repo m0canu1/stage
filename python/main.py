@@ -1,9 +1,12 @@
 import netifaces
 import sys
+import subprocess
+
 from utils import get_interfaces_list_noloopback, read_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 
 vr = ''
 mngmt = ''
+
 
 def change_config():
     # Imposta l'interfaccia per il Virtual Router e rimuove interfaccia scelta
@@ -26,6 +29,7 @@ def change_config():
     # if_list rimane con le interfacce disponibili per le squadre
     return set_teams_addresses(if_list, vr, mngmt)
 
+
 def first_menu():
     menu = -1
     while menu == -1 or menu == 1:
@@ -47,7 +51,6 @@ def first_menu():
             print('ERRORE di input.')
 
 
-
 def second_menu():
     # Scelta delle fasi
     menu = -1
@@ -61,18 +64,23 @@ def second_menu():
             if (menu) == 1:
                 if(change_config()):
                     print(phase_one())
+                    subprocess.run(["sudo", "netplan", "generate"])
+                    subprocess.run(["sudo", "netplan", "apply"])
                 else:
                     print(
                         'ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
             elif (menu) == 2:
                 change_config()
                 print(phase_two())
+                subprocess.run(["sudo", "netplan", "generate"])
+                subprocess.run(["sudo", "netplan", "apply"])
             elif (menu) == 0:
                 first_menu()
             else:
                 print("Your choice (%d) doesn't exit. Please, try again." % (menu))
         except ValueError:
             print('ERRORE di input.')
+
 
 if_list = get_interfaces_list_noloopback()
 first_menu()
