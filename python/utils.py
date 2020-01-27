@@ -192,11 +192,11 @@ def phase_two():
             interface = config['Team%dInterface' % (i)]
             address = config['Team%dAddress' % (i)] + '/24'
 
-            netplan_config['network']['ethernets'][interface] = {}
+            # netplan_config['network']['ethernets'][interface] = {}
             netplan_config['network']['ethernets'][interface]['addresses'] = [
                 address]
-            netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-            netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+            # netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+            # netplan_config['network']['ethernets'][interface]['dhcp6'] = False
             save_to_netplanconfig(netplan_config)
         except:
             return 'FASE 2: ERRORE'
