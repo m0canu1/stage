@@ -12,6 +12,7 @@ netplanfile = "50-cloud-init.yaml"
 netplan_config = {}
 netplan_config['network'] = {}
 netplan_config['network']['version'] = 2
+netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
 
 
@@ -190,7 +191,8 @@ def phase_two():
             address = config['Team%dAddress' % (i)] + '/24'
 
             netplan_config['network']['ethernets'][interface] = {}
-            netplan_config['network']['ethernets'][interface]['addresses'] = [address]
+            netplan_config['network']['ethernets'][interface]['addresses'] = [
+                address]
             netplan_config['network']['ethernets'][interface]['dhcp4'] = False
             netplan_config['network']['ethernets'][interface]['dhcp6'] = False
             save_to_netplanconfig(netplan_config)
