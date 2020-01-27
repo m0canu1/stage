@@ -161,6 +161,7 @@ def phase_one():
         mm_address]
 
     for interface in if_list:
+        netplan_config['network']['ethernets'][interface] = {}
         netplan_config['network']['ethernets'][interface]['dhcp4'] = False
         netplan_config['network']['ethernets'][interface]['dhcp6'] = False
 
