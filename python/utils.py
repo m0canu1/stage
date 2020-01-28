@@ -189,10 +189,6 @@ def phase_one():
     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [mm_address]
 
     for interface in if_list:
-        # netplan_config['network']['ethernets'][interface] = {}
-        # netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-        # netplan_config['network']['ethernets'][interface]['dhcp6'] = False
-
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
 
 
@@ -226,7 +222,12 @@ def phase_two():
             interface = config['Team%dInterface' % (i)]
             address = config['Team%dInterfaceAddress' % (i)] + '/24'
 
+            netplan_config['network']['ethernets'][interface] = {}
+            netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+            netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+
             netplan_config['network']['ethernets'][interface]['addresses'] = [address]
+            
             save_to_netplanconfig(netplan_config)
         except:
             return 'FASE 2: ERRORE'
