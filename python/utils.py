@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import subprocess
 
 import netifaces
 import yaml
@@ -27,17 +28,17 @@ def yes_or_no():
     if Fl == 'n':
         return False
 
-#
-# def address_to(address):
-#     i = len(address) - 1
-#     while (address[i]) != '.':
-#         address = address[:-1]
-#         i = i-1
-#     return address + '0'
 
-
-#
 def load_from_config():
+    """
+    Carica la configurazione dal file .config
+
+    Returns
+    -------
+    config: dic
+        la configurazione presente nel file .config oppure un dic vuoto
+        se non è stata trovata alcuna configurazione (o file non presente).
+    """
     try:
         with open(configfile) as f:
             try:
@@ -51,19 +52,28 @@ def load_from_config():
         return config
 
 
-#
 def save_to_config(config):
+    """
+    Salva la configurazione nel file .config 
+    """
     with open(configfile, 'w') as f:
-        # json.dump(config, f)
-        # json.dump(json.dumps(config, sort_keys=True, indent=4), f)
         f.write(json.dumps(config, indent=4, sort_keys=True))
         f.close()
 
 
-#
-
 
 def load_from_netplanconfig():
+    """
+    Carica la configurazione dal file *.yaml usato da Netplan
+
+    Returns
+    -------
+    False
+        se non è stato trovato alcun file *.yaml oppure se è corrotto (manomesso)
+    
+    config: dic
+        l'attuale configurazione contenuta nel file *.yaml di Netplan
+    """
     try:
         with open(netplanfile) as f:
             try:
@@ -77,17 +87,32 @@ def load_from_netplanconfig():
             yaml.safe_dump(netplan_config, f)
         return False
 
-#
 
 
 def save_to_netplanconfig(config):
+    """
+    Salva la configurazione nel file *.yaml usato da Netplan
+
+    Parameters
+    ----------
+    config : dic
+        La configurazione (formato yaml) che verrà salvata su file.
+    """
     with open(netplanfile, 'w') as f:
         yaml.safe_dump(config, f)
 
-# lettura da config
-
 
 def read_config():
+    """
+    Legge la configurazione dal file .config
+
+    
+    FileNotFoundError
+        Se non è stato trovato nessun file di configurazione.
+    
+    json.decoder.JSONDecodeError, KeyError
+        Se il file di configurazione è vuoto oppure corrotto.
+    """
     try:
         with open(configfile) as f:
             config = json.load(f)
@@ -96,30 +121,30 @@ def read_config():
             except KeyError:
                 nteams = 0
             try:
-                vinterface = config['VirtualRouterInterface']
+                vinterface = config['RouterToOutsideInterface']
             except KeyError:
                 vinterface = ''
             try:
-                vaddress = config['VirtualRouterAddress']
+                vaddress = config['RouterToOutsideAddress']
             except KeyError:
                 vaddress = ''
             try:
-                minterface = config['ManagementMachineInterface']
+                minterface = config['ManagementInterface']
             except KeyError:
                 minterface = ''
             try:
-                maddress = config['ManagementMachineAddress']
+                maddress = config['ManagementInterfaceAddress']
             except KeyError:
                 maddress = ''
 
             print('\n\n')
-            print('VIRTUALROUTER: %s ::: %s'.center(100) %
+            print('ROUTER TO OUTSIDE: %s ::: %s'.center(100) %
                   (vinterface, vaddress))
             print('MANAGEMENT: %s ::: %s'.center(100) % (minterface, maddress))
 
             for i in range(1, nteams+1):
                 interface = config['Team%dInterface' % (i)]
-                address = config['Team%dAddress' % (i)]
+                address = config['Team%dInterfaceAddress' % (i)]
                 print('TEAM %d: %s ::: %s'.center(100) %
                       (i, interface, address))
             print('\n')
@@ -129,18 +154,24 @@ def read_config():
         print('Il file di configurazione è vuoto o corrotto.')
 
 
-# recupera gli indirizzi di Router e interfaccia per management
-# def get_address(machine):
 
 
 # CREAZIONE DEL FILE NETPLAN PER LA FASE UNO
 def phase_one():
+    """
+    Crea il file *.yaml per Netplan, per la FASE UNO
+
+    Ritorno
+    -------
+    Una stringa che conferma l'esito della creazione.
+    """
+
     config = load_from_config()
 
-    vr_address = config['VirtualRouterAddress'] + '/24'
-    vr_interface = config['VirtualRouterInterface']
-    mm_address = config['ManagementMachineAddress'] + '/24'
-    mm_interface = config['ManagementMachineInterface']
+    vr_address = config['RouterToOutsideAddress'] + '/24'
+    vr_interface = config['RouterToOutsideInterface']
+    mm_address = config['ManagementInterfaceAddress'] + '/24'
+    mm_interface = config['ManagementInterface']
 
     if_list = get_interfaces_list_noloopback()
     if_list.pop(if_list.index(vr_interface))
@@ -155,33 +186,37 @@ def phase_one():
     netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
     netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
 
-    netplan_config['network']['ethernets'][vr_interface]['addresses'] = [
-        vr_address]
-    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
-        mm_address]
+    netplan_config['network']['ethernets'][vr_interface]['addresses'] = [vr_address]
+    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [mm_address]
 
     for interface in if_list:
         netplan_config['network']['ethernets'][interface] = {}
         netplan_config['network']['ethernets'][interface]['dhcp4'] = False
         netplan_config['network']['ethernets'][interface]['dhcp6'] = False
 
+        subprocess.run(["ip", "link", "set", "dev", interface, "down"])
+
+
     save_to_netplanconfig(netplan_config)
     return 'FASE 1: OK'
 
-# CREAZIONE DEL FILE DI NETPLAN PER LA FASE DUE
 
 
 def phase_two():
-    # ripete la fase uno in ogni caso per accertarsi che il file .yaml sia
-    # scritto correttamente e coerentemente con il file di configurazione (in caso di file corrotto,
-    # scritto male, o scritto bene ma con parametri sbagliati non contenuti nel file di configurazione)
+    """
+    Crea il file *.yaml per Netplan, per la FASE UNO
+
+    La FASE UNO viene ripetuta in ogni caso per accertarsi che il file .yaml sia
+    scritto correttamente e coerentemente con il file .config. Ovvero che il file non sia corrotto,
+    scritto male, o scritto bene ma con parametri sbagliati (che non sono contenuti nel file .config)
+
+    Ritorno
+    -------
+    Una stringa che conferma l'esito della creazione.
+    """
+
     phase_one()
     netplan_config = load_from_netplanconfig()
-    # se il file .yaml è corrotto, lo corregge ripetendo la fase 1
-    # e ricaricando la configurazione
-    # if(not netplan_config):
-    #     phase_one()
-    #     netplan_config = load_from_netplanconfig()
 
     config = load_from_config()
 
@@ -190,30 +225,26 @@ def phase_two():
     for i in range(1, nteams+1):
         try:
             interface = config['Team%dInterface' % (i)]
-            address = config['Team%dAddress' % (i)] + '/24'
+            address = config['Team%dInterfaceAddress' % (i)] + '/24'
 
-            # netplan_config['network']['ethernets'][interface] = {}
-            netplan_config['network']['ethernets'][interface]['addresses'] = [
-                address]
-            # netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-            # netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+            netplan_config['network']['ethernets'][interface]['addresses'] = [address]
             save_to_netplanconfig(netplan_config)
         except:
             return 'FASE 2: ERRORE'
-    # save_to_netplanconfig(netplan_config)
     return 'FASE 2: OK'
-
-# 0 for Virtual Router
-# 1 for Management
 
 
 def set_address_support(machine, config):
+    """
+    Metodo di supporto per set_address()
+    """
+
     if (machine == 0):
         flag = False
         while not flag:
             address = str(input("""Virtual Router address: """))
             if check_ip(address):
-                config["VirtualRouterAddress"] = address
+                config["RouterToOutsideAddress"] = address
                 flag = True
             else:
                 print('ERRORE, non è un indirizzo valido.')
@@ -223,7 +254,7 @@ def set_address_support(machine, config):
         while not flag:
             address = str(input("""Management Address: """))
             if check_ip(address):
-                config["ManagementMachineAddress"] = address
+                config["ManagementInterfaceAddress"] = address
                 flag = True
             else:
                 print('ERRORE, non è un indirizzo valido.')
@@ -232,55 +263,71 @@ def set_address_support(machine, config):
 
     return address
 
-#
-
 
 def set_address(machine):
+    """
+    Imposta l'indirizzo dell'interfaccia per la macchina.
+
+    Parameters
+    ----------
+    machine: int
+        0 : per l'interfaccia usata dal Virtual Router verso l'esterno
+        1 : per l'interfaccia usata dal Management
+    """
+
     config = load_from_config()
 
     if (machine == 0):
-        if("VirtualRouterAddress" in config and check_ip(config['VirtualRouterAddress'])):
+        if("RouterToOutsideAddress" in config and check_ip(config['RouterToOutsideAddress'])):
             print("L'indirizzo corrente del Virtual Router è: %s" %
-                  (config["VirtualRouterAddress"]))
+                  (config["RouterToOutsideAddress"]))
             if yes_or_no():
                 return set_address_support(0, config)
             else:
-                return config["VirtualRouterAddress"]
+                return config["RouterToOutsideAddress"]
         else:
             return set_address_support(0, config)
 
     else:
-        if("ManagementMachineAddress" in config and check_ip(config['VirtualRouterAddress'])):
+        if("ManagementInterfaceAddress" in config and check_ip(config['RouterToOutsideAddress'])):
             print("L'indirizzo corrente della Macchina di Management è: %s" %
-                  (config["ManagementMachineAddress"]))
+                  (config["ManagementInterfaceAddress"]))
             if yes_or_no():
                 return set_address_support(1, config)
             else:
-                return config["ManagementMachineAddress"]
+                return config["ManagementInterfaceAddress"]
         else:
             return set_address_support(1, config)
 
 
 def get_interfaces_list_noloopback():
-    # salva in una lista il nome di tutte le interfacce disponibili
-    if_list = netifaces.interfaces()
+    """
+    Restituisce tutte le interfacce del sistema, escludendo il 'loopback'
 
-    # elimina l'interfaccia di loopback
+    Returns
+    -------
+    if_list : list
+        con le interfacce disponibili per la gara
+    """
+
+    if_list = netifaces.interfaces()
     if_list.pop(if_list.index('lo'))
 
     return if_list
 
 
-# riceve una lista delle interfacce rimanenti insieme all'indirizzo del virtual router
-# e dell'interfaccia della macchina di management
 def set_teams_addresses(if_list, vr_address, mm_address):
     """
     Imposta gli indirizzi delle interfacce rimanenti
 
-    Parameters:
-    if_list (list): Lista delle interfacce rimanenti.
-    vr_address (str): Indirizzo del Virtual Router
-    mm_address (str): Indirizzo dell'interfaccia per la Macchina di Management
+    Parameters
+    ----------
+    if_list : list 
+        Lista delle interfacce rimanenti.
+    vr_address : str
+        Indirizzo del Virtual Router
+    mm_address : str 
+        Indirizzo dell'interfaccia per la Macchina di Management
     """
     config = load_from_config()
     nteams = config['NumberOfTeams']
@@ -298,7 +345,7 @@ def set_teams_addresses(if_list, vr_address, mm_address):
             flag = False
             while not flag:
                 if (ip not in (vr, mm)):
-                    config["Team%dAddress" % (i)] = '172.168.%d.100' % (ip)
+                    config["Team%dInterfaceAddress" % (i)] = '172.168.%d.100' % (ip)
                     flag = True
                 ip += 1
 
@@ -308,47 +355,60 @@ def set_teams_addresses(if_list, vr_address, mm_address):
         # print('ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
         return False
 
-#
-
 
 def choose_interface_support(machine, if_list, config):
+    """
+    Metodo di supporto per choose_interface()
+    """
+
+
     print('Scegli tra le seguenti:\n')
     print(', '.join(if_list).center(100)+'\n')
 
     # interface = ''
 
     if (machine == 0):
-        interface = input('Interfaccia per VIRTUAL ROUTER: ')
+        interface = input("Interfaccia del ROUTER verso l'esterno: ")
         while (interface not in if_list):
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
-            interface = input('Interfaccia per VIRTUAL ROUTER: ')
-        config['VirtualRouterInterface'] = interface
+            interface = input("Interfaccia del ROUTER verso l'esterno: ")
+        config['RouterToOutsideInterface'] = interface
     else:
-        interface = input('Interfaccia per MANAGEMENT: ')
+        interface = input('Interfaccia per il MANAGEMENT: ')
         while (interface not in if_list):
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
-            interface = input('Interfaccia per MANAGEMENT: ')
-        config['ManagementMachineInterface'] = interface
+            interface = input('Interfaccia per il MANAGEMENT: ')
+        config['ManagementInterface'] = interface
 
     save_to_config(config)
     return interface
 
-#
-
 
 def choose_interface(machine, if_list):
+    """
+    Permette la scelta delle interfacce da una lista.
+
+    Parameters
+    ----------
+    machine : int
+        0 : se per l'interfaccia usata dal router verso l'esterno
+        1 : se per l'interfaccia usata dal management
+    
+    if_list : list
+        la lista con le interfacce disponibili per la scelta.
+    """
     config = load_from_config()
 
     if (machine == 0):
-        str = 'VirtualRouterInterface'
+        str = 'RouterToOutsideInterface'
     else:
-        str = 'ManagementMachineInterface'
+        str = 'ManagementInterface'
 
     if (machine == 0):
         if (config and str in config):  # se dic vuoto ritorna false
-            print("L'interfaccia corrente del Virtual Router è: %s" %
+            print("L'interfaccia corrente (verso l'esterno) del ROUTER è: %s" %
                   (config[str]))
             if yes_or_no():
                 return choose_interface_support(0, if_list, config)
@@ -358,7 +418,7 @@ def choose_interface(machine, if_list):
             return choose_interface_support(0, if_list, config)
     else:
         if (config and str in config):  # se dic vuoto ritorna false
-            print("L'interfaccia corrente della Management Machine è: %s" %
+            print("L'interfaccia corrente del MANAGEMENT è: %s" %
                   (config[str]))
             if yes_or_no():
                 return choose_interface_support(1, if_list, config)
@@ -368,8 +428,11 @@ def choose_interface(machine, if_list):
             return choose_interface_support(1, if_list, config)
 
 
-#
 def set_teams_number_support(maxteams, config):
+    """
+    Metodo di supporto per set_Teams_number()
+    """
+
     nteams = -1
     while (nteams < 0 or nteams > maxteams):
         try:
@@ -381,15 +444,21 @@ def set_teams_number_support(maxteams, config):
         except ValueError:
             print("Input errato")
 
-    # salva il numero di squadre nel file di configurazione
     config['NumberOfTeams'] = nteams
 
     save_to_config(config)
 
-#
-
 
 def set_teams_number(maxteams):
+    """
+    Permette la scelta del numero di squadre
+
+    Parameters
+    ----------
+    maxteams : int
+        Numero massimo di squadre
+    """
+    
     config = load_from_config()
 
     if("NumberOfTeams" in config):
@@ -401,8 +470,11 @@ def set_teams_number(maxteams):
         set_teams_number_support(maxteams, config)
 
 
-# rimuove le virgolette
 def remove_quotes(fname):
+    """
+    Rimuove le virgolette da un file
+    """
+    
     file = open(fname, 'r')
     data = file.read()
     data = data.replace("'", "")
@@ -411,6 +483,10 @@ def remove_quotes(fname):
 
 
 def check_ip(ip):
+    """
+    Verifica se un indirizzo ip è valido.
+    """
+
     try:
         ipaddress.ip_address(ip)
         return True
