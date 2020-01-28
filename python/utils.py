@@ -156,7 +156,6 @@ def read_config():
 
 
 
-# CREAZIONE DEL FILE NETPLAN PER LA FASE UNO
 def phase_one():
     """
     Crea il file *.yaml per Netplan, per la FASE UNO
@@ -190,9 +189,9 @@ def phase_one():
     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [mm_address]
 
     for interface in if_list:
-        netplan_config['network']['ethernets'][interface] = {}
-        netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-        netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+        # netplan_config['network']['ethernets'][interface] = {}
+        # netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+        # netplan_config['network']['ethernets'][interface]['dhcp6'] = False
 
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
 
@@ -242,7 +241,7 @@ def set_address_support(machine, config):
     if (machine == 0):
         flag = False
         while not flag:
-            address = str(input("""Virtual Router address: """))
+            address = str(input("""ROUTER Interface Address (to outside): """))
             if check_ip(address):
                 config["RouterToOutsideAddress"] = address
                 flag = True
@@ -252,7 +251,7 @@ def set_address_support(machine, config):
     else:
         flag = False
         while not flag:
-            address = str(input("""Management Address: """))
+            address = str(input("""Management Interface Address: """))
             if check_ip(address):
                 config["ManagementInterfaceAddress"] = address
                 flag = True
