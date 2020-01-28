@@ -9,11 +9,11 @@ mngmt = ''
 
 
 def change_config():
-    # Imposta l'interfaccia per il Virtual Router e rimuove interfaccia scelta
+    # Imposta l'interfaccia per l'esterno del Virtual Router e la rimuove
     vr = choose_interface(0, if_list)
     if_list.pop(if_list.index(vr))
 
-    # Imposta l'interfaccia per il Management e rimuove interfaccia scelta
+    # Imposta l'interfaccia per il Management e la rimuove
     mngmt = choose_interface(1, if_list)
     if_list.pop(if_list.index(mngmt))
 
@@ -68,7 +68,7 @@ def second_menu():
                     subprocess.run(["sudo", "netplan", "apply"])
                 else:
                     print(
-                        'ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
+                        "ERRORE: Indirizzi del Router (verso l'esterno) e/o Interfaccia di Management errati, ricontrolla.")
             elif (menu) == 2:
                 change_config()
                 print(phase_two())
