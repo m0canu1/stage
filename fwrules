@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Parametri presi da console
+# OUTSIDE_INTERFACE=$1
+# OUTSIDE_ADDRESS=$2
+
+# MANAGEMENT_INTERFACE=$3
+# MANAGEMENT=$4
+
+
+MANAGEMENT_INTERFACE="ens37"
+MANAGEMENT="172.168.2.128"
+
+
+# Pulizia delle attuali regole e reset ad ACCEPT
+sudo iptables -F
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+
+
+# DROP di tutti i pacchetti da inoltrare
+sudo iptables -P FORWARD DROP
+
+# DROP dei pacchetti da ricevere (incluso ping)
+sudo iptables -P INPUT DROP
+
+
+# Accetta tutte le connessioni dal management
+sudo iptables -A INPUT -s 172.168.2.128 -j ACCEPT
+# Accetta tutte le connessioni da macchina host di vmware (per comodità)
+sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
+
+# Permette ping da management a chiunque + risposta
+# Non permette ping dalle squadre verso nessuno all’infuori del proprio subnet:
+sudo iptables -A FORWARD -p icmp --icmp-type 8 -s $MANAGEMENT -d 0/0 -j ACCEPT
+sudo iptables -A FORWARD -p icmp --icmp-type 0 -s 0/0 -d $MANAGEMENT -j ACCEPT
+
+# Permette nuova connessione tcp solo da management, gli altri non possono iniziarla
+sudo iptables -A FORWARD -p tcp -s $MANAGEMENT -d 0/0 -m state --state NEW -j ACCEPT
+# sudo iptables -A FORWARD -p tcp -s 0/0 -d $MANAGEMENT -m state ! --state NEW -j ACCEPT
+sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+
+# Non permettere alcun protocollo dalle sottoreti di gara all’interfaccia di management
+# ciò avviene perché la politica di FORWARD è DROP
+
+
+
+
+
+# DA TESTARE
+
+
+# Permette connessione tcp dalla subnet del management
+# sudo iptables -A INPUT -p tcp -s $MANAGEMENT --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+
+# Permette traffico su connessioni stabilite e/o collegate tra loro
+# sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# sudo iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
