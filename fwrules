@@ -11,6 +11,10 @@
 MANAGEMENT_INTERFACE="ens37"
 MANAGEMENT="172.168.2.128"
 
+TEAM1_INTERFACE="ens38"
+TEAM2_INTERFACE="ens39"
+TEAM3_INTERFACE="ens40"
+
 
 # Pulizia delle attuali regole e reset ad ACCEPT
 sudo iptables -F
@@ -27,7 +31,7 @@ sudo iptables -P INPUT DROP
 
 
 # Accetta tutte le connessioni dal management
-sudo iptables -A INPUT -s 172.168.2.128 -j ACCEPT
+sudo iptables -A INPUT -s $MANAGEMENT -j ACCEPT
 # Accetta tutte le connessioni da macchina host di vmware (per comodità)
 sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
 
@@ -45,10 +49,24 @@ sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 # ciò avviene perché la politica di FORWARD è DROP
 
 
+# Permette FORWARD di ogni connessione tra le squadre
+sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
+sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
+
+sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
+sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
+
+sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
+sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
+
+
 
 
 
 # DA TESTARE
+
+
+
 
 
 # Permette connessione tcp dalla subnet del management
