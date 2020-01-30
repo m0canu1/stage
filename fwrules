@@ -7,6 +7,12 @@
 # MANAGEMENT_INTERFACE=$3
 # MANAGEMENT=$4
 
+maskaddresses[0]=11.11.11.11
+maskaddresses[1]=22.22.22.22
+maskaddresses[2]=33.33.33.33
+maskaddresses[3]=44.44.44.44
+maskaddresses[4]=55.55.55.55
+
 
 MANAGEMENT_INTERFACE="ens37"
 MANAGEMENT="172.168.2.128"
@@ -21,7 +27,7 @@ sudo iptables -F
 sudo iptables -P FORWARD ACCEPT
 sudo iptables -P INPUT ACCEPT
 sudo iptables -P OUTPUT ACCEPT
-
+sudo iptables -t nat -F
 
 # DROP di tutti i pacchetti da inoltrare
 sudo iptables -P FORWARD DROP
@@ -61,10 +67,24 @@ sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
 
 
 
+# Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team
+sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source 11.11.11.11
+sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source 22.22.22.22
+sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source 33.33.33.33
+
+
+# Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
+sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+
+
+
+# Cambia l'indirizzo sorgente dei pacchetti proveniente dalla sottorete -s e indirizzati alla squadra 2
+# iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -s 172.168.3.0/24 -j SNAT --to-source 3.4.5.6
 
 
 # DA TESTARE
-
 
 
 
