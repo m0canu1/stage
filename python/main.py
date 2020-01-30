@@ -3,6 +3,7 @@ import sys
 import subprocess
 
 from utils import get_interfaces_list_noloopback, read_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
+from tests import ping_tests
 
 vr = ''
 mngmt = ''
@@ -37,12 +38,15 @@ def first_menu():
             menu = int(input("""
                 1. Visualizzare l'attuale configurazione.
                 2. Scelta delle fasi
+                3. Ping delle macchine
                 0. Quit.
             """))
             if menu == 1:
                 read_config()
             elif menu == 2:
                 second_menu()
+            elif menu == 3:
+                ping_tests()
             elif (menu) == 0:
                 sys.exit
             else:

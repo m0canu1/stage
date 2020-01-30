@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# fase, uplink, management, team...
+
 # Parametri presi da console
 # OUTSIDE_INTERFACE=$1
 # OUTSIDE_ADDRESS=$2
@@ -15,7 +17,6 @@ maskaddresses[4]=55.55.55.55
 
 
 MANAGEMENT_INTERFACE="ens37"
-MANAGEMENT="172.168.2.128"
 
 TEAM1_INTERFACE="ens38"
 TEAM2_INTERFACE="ens39"
@@ -37,17 +38,17 @@ sudo iptables -P INPUT DROP
 
 
 # Accetta tutte le connessioni dal management
-sudo iptables -A INPUT -s $MANAGEMENT -j ACCEPT
+sudo iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
 # Accetta tutte le connessioni da macchina host di vmware (per comodità)
 sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
 
 # Permette ping da management a chiunque + risposta
 # Non permette ping dalle squadre verso nessuno all’infuori del proprio subnet:
-sudo iptables -A FORWARD -p icmp --icmp-type 8 -s $MANAGEMENT -d 0/0 -j ACCEPT
-sudo iptables -A FORWARD -p icmp --icmp-type 0 -s 0/0 -d $MANAGEMENT -j ACCEPT
+sudo iptables -A FORWARD -p icmp --icmp-type 8 -i $MANAGEMENT_INTERFACE -j ACCEPT
+sudo iptables -A FORWARD -p icmp --icmp-type 0 -o $MANAGEMENT_INTERFACE -j ACCEPT
 
 # Permette nuova connessione tcp solo da management, gli altri non possono iniziarla
-sudo iptables -A FORWARD -p tcp -s $MANAGEMENT -d 0/0 -m state --state NEW -j ACCEPT
+sudo iptables -A FORWARD -p tcp -i $MANAGEMENT_INTERFACE -m state --state NEW -j ACCEPT
 # sudo iptables -A FORWARD -p tcp -s 0/0 -d $MANAGEMENT -m state ! --state NEW -j ACCEPT
 sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
@@ -55,8 +56,15 @@ sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 # ciò avviene perché la politica di FORWARD è DROP
 
 
+
+# SECONDA FASE
+
+# permettere da management ad uplink, non viceversa
+# drop pacchetti destinati ad uplink e management
+# accept all sulla catena di forward
+
 # Permette FORWARD di ogni connessione tra le squadre
-sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
+sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT # provare a togliere -i e -o
 sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
 
 sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
@@ -68,9 +76,9 @@ sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
 
 
 # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team
-sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source 11.11.11.11
-sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source 22.22.22.22
-sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source 33.33.33.33
+# sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source 11.11.11.11
+# sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source 22.22.22.22
+# sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source 33.33.33.33
 
 
 # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
