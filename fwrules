@@ -2,8 +2,18 @@
 
 # fase, uplink, management, team...
 
+nteams=$(expr $# - 3)
+
+phase=$1
+# uplink=$2
+# management=$3
+
+
+
+
+
 # Parametri presi da console
-# OUTSIDE_INTERFACE=$1
+# UPLINK=$1
 # OUTSIDE_ADDRESS=$2
 
 # MANAGEMENT_INTERFACE=$3
@@ -22,6 +32,7 @@ TEAM1_INTERFACE="ens38"
 TEAM2_INTERFACE="ens39"
 TEAM3_INTERFACE="ens40"
 
+    
 
 # Pulizia delle attuali regole e reset ad ACCEPT
 sudo iptables -F
@@ -29,6 +40,7 @@ sudo iptables -P FORWARD ACCEPT
 sudo iptables -P INPUT ACCEPT
 sudo iptables -P OUTPUT ACCEPT
 sudo iptables -t nat -F
+
 
 # DROP di tutti i pacchetti da inoltrare
 sudo iptables -P FORWARD DROP
@@ -52,40 +64,45 @@ sudo iptables -A FORWARD -p tcp -i $MANAGEMENT_INTERFACE -m state --state NEW -j
 # sudo iptables -A FORWARD -p tcp -s 0/0 -d $MANAGEMENT -m state ! --state NEW -j ACCEPT
 sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
-# Non permettere alcun protocollo dalle sottoreti di gara all’interfaccia di management
-# ciò avviene perché la politica di FORWARD è DROP
+
+# Permette connessioni loopback
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A OUTPUT -o lo -j ACCEPT
 
 
+if [ $phase -eq 2 ]
+then 
 
-# SECONDA FASE
+    # SECONDA FASE
 
-# permettere da management ad uplink, non viceversa
-# drop pacchetti destinati ad uplink e management
-# accept all sulla catena di forward
+    # permettere da management ad uplink, non viceversa
+    sudo iptables -A FORWARD -i $MANAGEMENT_INTERFACE -j ACCEPT
 
-# Permette FORWARD di ogni connessione tra le squadre
-sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT # provare a togliere -i e -o
-sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
+    # drop pacchetti destinati ad uplink e management
+    sudo iptables -A FORWARD -o uplink -j DROP
+    sudo iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP
 
-sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
-sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
-
-sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
-sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
+    # accept all sulla catena di forward
+    sudo iptables -A FORWARD -j ACCEPT 
 
 
+    # # Permette FORWARD di ogni connessione tra le squadre
+    # sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT # provare a togliere -i e -o
+    # sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
 
-# Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team
-# sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source 11.11.11.11
-# sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source 22.22.22.22
-# sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source 33.33.33.33
+    # sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
+    # sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
+
+    # sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
+    # sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
 
 
-# Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
-sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+    # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
+    sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+    sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+    sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
 
+fi
 
 
 # Cambia l'indirizzo sorgente dei pacchetti proveniente dalla sottorete -s e indirizzati alla squadra 2

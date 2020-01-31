@@ -242,7 +242,7 @@ def set_address_support(machine, config):
     if (machine == 0):
         flag = False
         while not flag:
-            address = str(input("""ROUTER Interface Address (to outside): """))
+            address = str(input("""UPLINK Address: """))
             if check_ip(address):
                 config["UplinkAddress"] = address
                 flag = True
@@ -290,7 +290,7 @@ def set_address(machine):
 
     else:
         if("ManagementInterfaceAddress" in config and check_ip(config['UplinkAddress'])):
-            print("L'indirizzo corrente della Macchina di Management è: %s" %
+            print("L'indirizzo corrente dell'interfaccia di Management è: %s" %
                   (config["ManagementInterfaceAddress"]))
             if yes_or_no():
                 return set_address_support(1, config)
