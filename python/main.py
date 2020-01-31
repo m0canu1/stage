@@ -91,3 +91,9 @@ def second_menu():
 
 if_list = get_interfaces_list_noloopback()
 first_menu()
+
+
+
+
+# aggiungere possibilità di scelta di masquerading casuale oppure no
+# ragionare sull'udp
