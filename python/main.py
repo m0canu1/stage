@@ -97,3 +97,4 @@ first_menu()
 
 # aggiungere possibilità di scelta di masquerading casuale oppure no
 # ragionare sull'udp
+# log del traffico per identificare ddos
