@@ -9,9 +9,6 @@ phase=$1
 # management=$3
 
 
-
-
-
 # Parametri presi da console
 # UPLINK=$1
 # OUTSIDE_ADDRESS=$2
@@ -69,6 +66,9 @@ sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 sudo iptables -A INPUT -i lo -j ACCEPT
 sudo iptables -A OUTPUT -o lo -j ACCEPT
 
+# Permette le risposte al ping da parte di chiunque
+sudo iptables -A INPUT -p icmp --icmp-type 0 -j ACCEPT
+
 
 if [ $phase -eq 2 ]
 then 
@@ -85,38 +85,9 @@ then
     # accept all sulla catena di forward
     sudo iptables -A FORWARD -j ACCEPT 
 
-
-    # # Permette FORWARD di ogni connessione tra le squadre
-    # sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT # provare a togliere -i e -o
-    # sudo iptables -A FORWARD -i $TEAM1_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
-
-    # sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
-    # sudo iptables -A FORWARD -i $TEAM2_INTERFACE -o $TEAM3_INTERFACE -j ACCEPT
-
-    # sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM1_INTERFACE -j ACCEPT
-    # sudo iptables -A FORWARD -i $TEAM3_INTERFACE -o $TEAM2_INTERFACE -j ACCEPT
-
-
     # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
     sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
     sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
     sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
 
 fi
-
-
-# Cambia l'indirizzo sorgente dei pacchetti proveniente dalla sottorete -s e indirizzati alla squadra 2
-# iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -s 172.168.3.0/24 -j SNAT --to-source 3.4.5.6
-
-
-# DA TESTARE
-
-
-
-
-# Permette connessione tcp dalla subnet del management
-# sudo iptables -A INPUT -p tcp -s $MANAGEMENT --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-
-# Permette traffico su connessioni stabilite e/o collegate tra loro
-# sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-# sudo iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
