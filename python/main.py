@@ -96,5 +96,6 @@ first_menu()
 
 
 # aggiungere possibilità di scelta di masquerading casuale oppure no
-# ragionare sull'udp
+# ragionare sull'udp (farlo funzionare come tcp)
 # log del traffico per identificare ddos
+# script per le regole di firewall che prende i parametri in input

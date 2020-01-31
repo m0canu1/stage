@@ -58,7 +58,6 @@ sudo iptables -A FORWARD -p icmp --icmp-type 0 -o $MANAGEMENT_INTERFACE -j ACCEP
 
 # Permette nuova connessione tcp solo da management, gli altri non possono iniziarla
 sudo iptables -A FORWARD -p tcp -i $MANAGEMENT_INTERFACE -m state --state NEW -j ACCEPT
-# sudo iptables -A FORWARD -p tcp -s 0/0 -d $MANAGEMENT -m state ! --state NEW -j ACCEPT
 sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
 
@@ -72,7 +71,6 @@ sudo iptables -A INPUT -p icmp --icmp-type 0 -j ACCEPT
 
 if [ $phase -eq 2 ]
 then 
-
     # SECONDA FASE
 
     # permettere da management ad uplink, non viceversa
