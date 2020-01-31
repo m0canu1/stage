@@ -121,11 +121,11 @@ def read_config():
             except KeyError:
                 nteams = 0
             try:
-                vinterface = config['RouterToOutsideInterface']
+                vinterface = config['UplinkInterface']
             except KeyError:
                 vinterface = ''
             try:
-                vaddress = config['RouterToOutsideAddress']
+                vaddress = config['UplinkAddress']
             except KeyError:
                 vaddress = ''
             try:
@@ -167,8 +167,8 @@ def phase_one():
 
     config = load_from_config()
 
-    vr_address = config['RouterToOutsideAddress'] + '/24'
-    vr_interface = config['RouterToOutsideInterface']
+    vr_address = config['UplinkAddress'] + '/24'
+    vr_interface = config['UplinkInterface']
     mm_address = config['ManagementInterfaceAddress'] + '/24'
     mm_interface = config['ManagementInterface']
 
@@ -244,7 +244,7 @@ def set_address_support(machine, config):
         while not flag:
             address = str(input("""ROUTER Interface Address (to outside): """))
             if check_ip(address):
-                config["RouterToOutsideAddress"] = address
+                config["UplinkAddress"] = address
                 flag = True
             else:
                 print('ERRORE, non è un indirizzo valido.')
@@ -271,25 +271,25 @@ def set_address(machine):
     Parameters
     ----------
     machine: int
-        0 : per l'interfaccia usata dal Virtual Router verso l'esterno
+        0 : per l'interfaccia di UPLINK
         1 : per l'interfaccia usata dal Management
     """
 
     config = load_from_config()
 
     if (machine == 0):
-        if("RouterToOutsideAddress" in config and check_ip(config['RouterToOutsideAddress'])):
-            print("L'indirizzo corrente del Virtual Router è: %s" %
-                  (config["RouterToOutsideAddress"]))
+        if("UplinkAddress" in config and check_ip(config['UplinkAddress'])):
+            print("L'indirizzo corrente di UPLINK è: %s" %
+                  (config["UplinkAddress"]))
             if yes_or_no():
                 return set_address_support(0, config)
             else:
-                return config["RouterToOutsideAddress"]
+                return config["UplinkAddress"]
         else:
             return set_address_support(0, config)
 
     else:
-        if("ManagementInterfaceAddress" in config and check_ip(config['RouterToOutsideAddress'])):
+        if("ManagementInterfaceAddress" in config and check_ip(config['UplinkAddress'])):
             print("L'indirizzo corrente della Macchina di Management è: %s" %
                   (config["ManagementInterfaceAddress"]))
             if yes_or_no():
@@ -325,7 +325,7 @@ def set_teams_addresses(if_list, vr_address, mm_address):
     if_list : list 
         Lista delle interfacce rimanenti.
     vr_address : str
-        Indirizzo del Virtual Router
+        Indirizzo di Uplink
     mm_address : str 
         Indirizzo dell'interfaccia per la Macchina di Management
     """
@@ -368,12 +368,12 @@ def choose_interface_support(machine, if_list, config):
     # interface = ''
 
     if (machine == 0):
-        interface = input("Interfaccia del ROUTER verso l'esterno: ")
+        interface = input("Interfaccia di UPLINK: ")
         while (interface not in if_list):
             print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
             print(', '.join(if_list).center(100)+'\n')
-            interface = input("Interfaccia del ROUTER verso l'esterno: ")
-        config['RouterToOutsideInterface'] = interface
+            interface = input("Interfaccia di UPLINK: ")
+        config['UplinkInterface'] = interface
     else:
         interface = input('Interfaccia per il MANAGEMENT: ')
         while (interface not in if_list):
@@ -393,7 +393,7 @@ def choose_interface(machine, if_list):
     Parameters
     ----------
     machine : int
-        0 : se per l'interfaccia usata dal router verso l'esterno
+        0 : se per l'interfaccia di uplink
         1 : se per l'interfaccia usata dal management
     
     if_list : list
@@ -402,13 +402,13 @@ def choose_interface(machine, if_list):
     config = load_from_config()
 
     if (machine == 0):
-        str = 'RouterToOutsideInterface'
+        str = 'UplinkInterface'
     else:
         str = 'ManagementInterface'
 
     if (machine == 0):
         if (config and str in config):  # se dic vuoto ritorna false
-            print("L'interfaccia corrente (verso l'esterno) del ROUTER è: %s" %
+            print("L'interfaccia corrente di UPLINK è: %s" %
                   (config[str]))
             if yes_or_no():
                 return choose_interface_support(0, if_list, config)
