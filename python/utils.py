@@ -138,7 +138,7 @@ def read_config():
                 maddress = ''
 
             print('\n\n')
-            print('ROUTER TO OUTSIDE: %s ::: %s'.center(100) %
+            print('UPLINK: %s ::: %s'.center(100) %
                   (vinterface, vaddress))
             print('MANAGEMENT: %s ::: %s'.center(100) % (minterface, maddress))
 

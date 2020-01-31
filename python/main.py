@@ -72,7 +72,7 @@ def second_menu():
                     subprocess.run(["sudo", "netplan", "apply"])
                 else:
                     print(
-                        "ERRORE: Indirizzi del Router (verso l'esterno) e/o Interfaccia di Management errati, ricontrolla.")
+                        "ERRORE: Indirizzi di UPLINK e/o Interfaccia di Management errati, ricontrolla.")
             elif (menu) == 2:
                 change_config()
                 print(phase_two())
