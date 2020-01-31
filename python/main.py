@@ -70,6 +70,7 @@ def second_menu():
                     print(phase_one())
                     subprocess.run(["sudo", "netplan", "generate"])
                     subprocess.run(["sudo", "netplan", "apply"])
+                    subprocess.run(["sudo", "./fwrules", "1"])
                 else:
                     print(
                         "ERRORE: Indirizzi di UPLINK e/o Interfaccia di Management errati, ricontrolla.")
@@ -78,6 +79,8 @@ def second_menu():
                 print(phase_two())
                 subprocess.run(["sudo", "netplan", "generate"])
                 subprocess.run(["sudo", "netplan", "apply"])
+                subprocess.run(["sudo", "./fwrules", "2"])
+
             elif (menu) == 0:
                 first_menu()
             else:
