@@ -2,32 +2,39 @@
 
 # fase, uplink, management, team...
 
-nteams=$(expr $# - 3)
-
-phase=$1
-# uplink=$2
-# management=$3
-
-
-# Parametri presi da console
-# UPLINK=$1
-# OUTSIDE_ADDRESS=$2
-
-# MANAGEMENT_INTERFACE=$3
-# MANAGEMENT=$4
-
-maskaddresses[0]=11.11.11.11
-maskaddresses[1]=22.22.22.22
-maskaddresses[2]=33.33.33.33
-maskaddresses[3]=44.44.44.44
-maskaddresses[4]=55.55.55.55
+# -p = phase [1 or 2]
+# -u = uplink interface
+# -m = management interface
+# -r = masquerading mode [true for random addresses or set an IP]
+# -s = address to use for masquerading source
+# -t = team n interface (around quotes "")
 
 
-MANAGEMENT_INTERFACE="ens37"
+while getopts p:u:m:r:t: option
+do
+case "${option}"
+in
+p) PHASE=${OPTARG};;
+u) UPLINK=${OPTARG};;
+m) MANAGEMENT_INTERFACE=${OPTARG};;
+r) MASQUERADING=${OPTARG};;
+s) MASKADDRESS=${OPTARG};;
+t) TEAMS=${OPTARG};; #lista delle interfacce, in ordine
+esac
+done
 
-TEAM1_INTERFACE="ens38"
-TEAM2_INTERFACE="ens39"
-TEAM3_INTERFACE="ens40"
+
+# TEAM1_INTERFACE="ens38"
+# TEAM2_INTERFACE="ens39"
+# TEAM3_INTERFACE="ens40"
+
+# nteam=0
+# for val in ${TEAMS}
+# do
+#     ((nteam++))
+#     declare TEAM${nteam}_INTERFACE="$val"
+# done
+
 
     
 
@@ -58,6 +65,7 @@ sudo iptables -A FORWARD -p icmp --icmp-type 0 -o $MANAGEMENT_INTERFACE -j ACCEP
 
 # Permette nuova connessione tcp solo da management, gli altri non possono iniziarla
 sudo iptables -A FORWARD -p tcp -i $MANAGEMENT_INTERFACE -m state --state NEW -j ACCEPT
+# sudo iptables -A FORWARD -p tcp -s 0/0 -d $MANAGEMENT -m state ! --state NEW -j ACCEPT
 sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
 
@@ -69,8 +77,10 @@ sudo iptables -A OUTPUT -o lo -j ACCEPT
 sudo iptables -A INPUT -p icmp --icmp-type 0 -j ACCEPT
 
 
-if [ $phase -eq 2 ]
+
+if [ $PHASE -eq 2 ]
 then 
+
     # SECONDA FASE
 
     # permettere da management ad uplink, non viceversa
@@ -83,9 +93,25 @@ then
     # accept all sulla catena di forward
     sudo iptables -A FORWARD -j ACCEPT 
 
-    # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
-    sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-    sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-    sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+    if [ $MASQUERADING = true ] #se scelto masquerading casuale
+    then
+
+        for interface in $TEAMS 
+        do
+            sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $((RANDOM%256)).$((RANDOM%256)).$((RANDOM%256)).$((RANDOM%256))
+        done
+
+    else #altrimenti
+
+        for interface in $TEAMS
+        do
+            sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $MASQUERADING
+        done
+        
+    fi
+        # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
+        # sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+        # sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
+        # sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
 
 fi
