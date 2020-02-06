@@ -52,11 +52,17 @@ sudo iptables -P FORWARD DROP
 # DROP dei pacchetti da ricevere (incluso ping)
 sudo iptables -P INPUT DROP
 
-
 # Accetta tutte le connessioni dal management
 sudo iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
 # Accetta tutte le connessioni da macchina host di vmware (per comodità)
 sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
+
+# Log di tutti i pacchetti entranti droppati
+sudo iptables -X LOGGING # elimina chain di LOGGING se esistente
+sudo iptables -N LOGGING # crea nuova chain
+sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
+sudo iptables -A LOGGING -m limit --limit 1/min -j LOG --log-prefix "IPTables-DROPPED-Packets: " --log-level 4
+# sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
 
 # Permette ping da management a chiunque + risposta
 # Non permette ping dalle squadre verso nessuno all’infuori del proprio subnet:
@@ -107,7 +113,7 @@ then
         do
             sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $MASQUERADING
         done
-        
+
     fi
         # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
         # sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}

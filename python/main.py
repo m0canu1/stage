@@ -92,10 +92,3 @@ def second_menu():
 if_list = get_interfaces_list_noloopback()
 first_menu()
 
-
-
-
-# aggiungere possibilità di scelta di masquerading casuale oppure no
-# ragionare sull'udp (farlo funzionare come tcp)
-# log del traffico per identificare ddos
-# script per le regole di firewall che prende i parametri in input
