@@ -52,10 +52,19 @@ sudo iptables -P FORWARD DROP
 # DROP dei pacchetti da ricevere (incluso ping)
 sudo iptables -P INPUT DROP
 
-# Accetta tutte le connessioni dal management
-sudo iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
-# Accetta tutte le connessioni da macchina host di vmware (per comodità)
-sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
+# Pulizia delle attuali regole e reset ad ACCEPT
+sudo iptables -F
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+sudo iptables -t nat -F
+
+
+# DROP di tutti i pacchetti da inoltrare
+# sudo iptables -P FORWARD DROP
+
+# DROP dei pacchetti da ricevere (incluso ping)
+sudo iptables -P INPUT DROP
 
 # Log di tutti i pacchetti entranti droppati
 sudo iptables -X LOGGING # elimina chain di LOGGING se esistente
@@ -63,6 +72,12 @@ sudo iptables -N LOGGING # crea nuova chain
 sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
 sudo iptables -A LOGGING -m limit --limit 1/min -j LOG --log-prefix "IPTables-DROPPED-Packets: " --log-level 4
 # sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
+
+# Accetta tutte le connessioni dal management
+sudo iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
+# Accetta tutte le connessioni da macchina host di vmware (per comodità)
+sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
+
 
 # Permette ping da management a chiunque + risposta
 # Non permette ping dalle squadre verso nessuno all’infuori del proprio subnet:
