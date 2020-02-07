@@ -10,7 +10,7 @@ mngmt = ''
 
 
 def change_config():
-    # Imposta l'interfaccia per l'esterno del Virtual Router e la rimuove
+    # Imposta l'interfaccia per l'uplink e la rimuove
     vr = choose_interface(0, if_list)
     if_list.pop(if_list.index(vr))
 
@@ -68,18 +68,15 @@ def second_menu():
             if (menu) == 1:
                 if(change_config()):
                     print(phase_one())
-                    subprocess.run(["sudo", "netplan", "generate"])
-                    subprocess.run(["sudo", "netplan", "apply"])
-                    subprocess.run(["sudo", "./fwrules", "1"])
+                    # subprocess.run(["sudo", "./fwrules", "1"])
                 else:
                     print(
                         "ERRORE: Indirizzi di UPLINK e/o Interfaccia di Management errati, ricontrolla.")
             elif (menu) == 2:
                 change_config()
                 print(phase_two())
-                subprocess.run(["sudo", "netplan", "generate"])
-                subprocess.run(["sudo", "netplan", "apply"])
-                subprocess.run(["sudo", "./fwrules", "2"])
+
+                # subprocess.run(["sudo", "./fwrules", "2"])
 
             elif (menu) == 0:
                 first_menu()

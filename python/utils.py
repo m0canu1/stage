@@ -17,6 +17,7 @@ netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
 
 
+
 def yes_or_no():
     query = input('Vuoi modificare? [y/n]: ')
     while (query not in ['y', 'n', 'Y', 'N'] or query == ''):
@@ -86,8 +87,6 @@ def load_from_netplanconfig():
         with open(netplanfile, 'w') as f:
             yaml.safe_dump(netplan_config, f)
         return False
-
-
 
 def save_to_netplanconfig(config):
     """
@@ -193,6 +192,10 @@ def phase_one():
 
 
     save_to_netplanconfig(netplan_config)
+
+    subprocess.run(["sudo", "netplan", "generate"])
+    subprocess.run(["sudo", "netplan", "apply"])
+
     return 'FASE 1: OK'
 
 
@@ -231,6 +234,9 @@ def phase_two():
             save_to_netplanconfig(netplan_config)
         except:
             return 'FASE 2: ERRORE'
+    
+    subprocess.run(["sudo", "netplan", "generate"])
+    subprocess.run(["sudo", "netplan", "apply"])
     return 'FASE 2: OK'
 
 
