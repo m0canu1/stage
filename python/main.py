@@ -2,8 +2,7 @@ import netifaces
 import sys
 import subprocess
 
-from utils import get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
-from tests import ping_tests
+from utils import enable_dhcp_uplink, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 
 vr = ''
 mngmt = ''
@@ -38,7 +37,7 @@ def first_menu():
             menu = int(input("""
                 1. Visualizzare l'attuale configurazione.
                 2. Scelta delle fasi
-                3. Ping delle macchine
+                3. Abilita dhcp per uplink.
                 0. Quit.
             """))
             if menu == 1:
@@ -46,7 +45,7 @@ def first_menu():
             elif menu == 2:
                 second_menu()
             elif menu == 3:
-                ping_tests()
+                enable_dhcp_uplink()
             elif (menu) == 0:
                 sys.exit
             else:

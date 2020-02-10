@@ -28,6 +28,12 @@ def phase_one_fw():
                    "-m", config["ManagementInterface"],
                    )
 
+def enable_dhcp_uplink():
+    config = load_from_netplanconfig()
+
+    config["network"]["ethernets"]["ens33"] = {}
+    config["network"]["ethernets"]["ens33"]["dhcp4"] = True
+
 def yes_or_no():
     query = input('Vuoi modificare? [y/n]: ')
     while (query not in ['y', 'n', 'Y', 'N'] or query == ''):

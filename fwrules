@@ -36,6 +36,8 @@ done
 # done
 
 
+# abilita connessione internet attraverso VRouter
+sudo iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADING
     
 
 # Pulizia delle attuali regole e reset ad ACCEPT
