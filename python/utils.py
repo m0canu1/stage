@@ -1,12 +1,14 @@
 import ipaddress
 import json
 import subprocess
+from pathlib import Path
 
 import netifaces
 import yaml
 
 configfile = "competition.config"
 netplanfile = "50-cloud-init.yaml"
+fwrules = Path().parent + "fwrules"
 
 
 # dizionario per la configurazione netplan
@@ -17,6 +19,14 @@ netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
 
 
+def phase_one_fw():
+    # non completo
+    config = load_from_config()
+
+    subprocess.run("sudo", fwrules, "1", 
+                   "-u", config["UplinkInterface"], 
+                   "-m", config["ManagementInterface"],
+                   )
 
 def yes_or_no():
     query = input('Vuoi modificare? [y/n]: ')
@@ -101,7 +111,7 @@ def save_to_netplanconfig(config):
         yaml.safe_dump(config, f)
 
 
-def read_config():
+def print_config():
     """
     Legge la configurazione dal file .config
 

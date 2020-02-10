@@ -2,7 +2,7 @@ import netifaces
 import sys
 import subprocess
 
-from utils import get_interfaces_list_noloopback, read_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
+from utils import get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 from tests import ping_tests
 
 vr = ''
@@ -42,7 +42,7 @@ def first_menu():
                 0. Quit.
             """))
             if menu == 1:
-                read_config()
+                print_config()
             elif menu == 2:
                 second_menu()
             elif menu == 3:
