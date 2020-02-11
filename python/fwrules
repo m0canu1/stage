@@ -5,8 +5,7 @@
 # -p = phase [1 or 2]
 # -u = uplink interface
 # -m = management interface
-# -r = masquerading mode [true for random addresses, false or set an IP]
-# -s = address to use for masquerading source
+# -r = masquerading mode [true for random addresses, false for no masquerading, set single or multiple (around "") IPs (for each team, in order)]
 # -t = team n interface (around quotes "")
 
 while getopts p:u:m:r:t: option
@@ -16,15 +15,14 @@ in
 p) PHASE=${OPTARG};;
 u) UPLINK=${OPTARG};;
 m) MANAGEMENT_INTERFACE=${OPTARG};;
-r) MASQUERADING=${OPTARG};;
-s) MASKADDRESS=${OPTARG};;
-t) TEAMS=${OPTARG};; #lista delle interfacce, in ordine
+r) MASQUERADING=(${OPTARG});; # LE PARENTESI SERVONO A TRASFORMARE LA STRINGA IN ARRAY
+t) TEAMS=(${OPTARG});; #lista delle interfacce, in ordine
 esac
 done
 
 
 # abilita connessione internet attraverso VRouter
-sudo iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADING
+sudo iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADE
     
 
 # Pulizia delle attuali regole e reset ad ACCEPT
@@ -46,7 +44,7 @@ sudo iptables -P INPUT DROP
 # Log di tutti i pacchetti entranti droppati
 sudo iptables -N LOGGING # crea nuova chain
 sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
-sudo iptables -A LOGGING -m limit --limit 1/min -j LOG --log-prefix "IPTables-DROPPED-Packets: " --log-level 4
+sudo iptables -A LOGGING -m limit --limit 1/min -j LOG --log-prefix "COMPETITION-LOG: " --log-level 4
 # sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
 
 # ------------------------------------------------------------
@@ -74,25 +72,10 @@ sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
 
 
 
-# ------------------------------------------------------------
-# le seguenti 5 regole da inserire in phase 2, e mettere forward a drop
+# Drop di tutti i pacchetti da inoltrare 
+# ?????????????????????? si dovrebbero attivare le altre sopra
+sudo iptables -A FORWARD -j DROP 
 
-
-
-# manda tutti i pacchetti alla chain LOGGING
-sudo iptables -A FORWARD -j LOGGING 
-
-
-# Permette di rispondere a connessioni già stabilite (ovviamente solo chi ha il permesso può iniziarle)
-sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT # FUNZIONA ANCHE PER UDP, SENZA QUESTA UDP NON RICEVE ACK
-
-# importante tenerla altrimenti i pacchetti cadono nella regola successiva (di drop) e vengono scartati
-# permettere da management a chiunque, non viceversa
-sudo iptables -A FORWARD -i $MANAGEMENT_INTERFACE -j ACCEPT
-
-# drop pacchetti destinati ad uplink e management
-sudo iptables -A FORWARD -o $UPLINK -j DROP
-sudo iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP
 
 
 # Permettere connessione nuova udp da management
@@ -115,29 +98,49 @@ then
 
     # SECONDA FASE
 
-    # accept all sulla catena di forward (INUTILE, LA POLITICA È GIÀ ACCEPT)
-    # sudo iptables -A FORWARD -j ACCEPT 
+    # accept all sulla catena di forward
+    sudo iptables -A FORWARD -j ACCEPT 
+    
+    # manda tutti i pacchetti alla chain LOGGING
+    sudo iptables -A FORWARD -j LOGGING 
 
-    if [ $MASQUERADING = true ] #se scelto masquerading casuale
+
+    # Permette di rispondere a connessioni già stabilite (ovviamente solo chi ha il permesso può iniziarle)
+    sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT # FUNZIONA ANCHE PER UDP, SENZA QUESTA UDP NON RICEVE ACK
+
+    # importante tenerla altrimenti i pacchetti cadono nella regola successiva (di drop) e vengono scartati
+    # permettere da management a chiunque, non viceversa
+    sudo iptables -A FORWARD -i $MANAGEMENT_INTERFACE -j ACCEPT
+
+    # drop pacchetti destinati ad uplink e management
+    sudo iptables -A FORWARD -o $UPLINK -j DROP
+    sudo iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP
+
+
+    if [ ${#MASQUERADING[@]} -eq 1 ]
     then
+        
+        if [ $MASQUERADING = true ] # se scelto masquerading random
+        then
 
-        for interface in $TEAMS 
-        do
-        # random%253 + 1 
-            sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $((RANDOM%256)).$((RANDOM%256)).$((RANDOM%256)).$((RANDOM%256))
-        done
+            for interface in "${TEAMS[@]}"
+            do
+                sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $((RANDOM%253+1)).$((RANDOM%253+1)).$((RANDOM%253+1)).$((RANDOM%253+1))
+            done
 
-    else #altrimenti
-
-        for interface in $TEAMS
-        do
-            sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $MASQUERADING
-        done
-
+        elif [ $MASQUERADING != false ] # se impostato un indirizzo uguale per tutti 
+        then
+            for interface in "${TEAMS[@]}"
+            do
+                sudo iptables -t nat -A POSTROUTING -o $interface -j SNAT --to-source $MASQUERADING
+            done
+        fi
+    elif [ ${#MASQUERADING[@]} > 1 ] # se impostato un indirizzo per ogni squadra
+        then
+            for ((i=0;i<${#TEAMS[@]};++i))
+            do
+                sudo iptables -t nat -A POSTROUTING -o ${TEAMS[i]} -j SNAT --to-source ${MASQUERADING[i]}
+            done
     fi
-        # Cambia indirizzo sorgente dei TUTTI i pacchetti verso i team in modo randomico
-        # sudo iptables -t nat -A POSTROUTING -o $TEAM1_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-        # sudo iptables -t nat -A POSTROUTING -o $TEAM2_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
-        # sudo iptables -t nat -A POSTROUTING -o $TEAM3_INTERFACE -j SNAT --to-source ${maskaddresses[$[ $RANDOM % 5]]}
 
 fi
