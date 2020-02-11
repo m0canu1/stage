@@ -76,6 +76,7 @@ sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
 # ?????????????????????? si dovrebbero attivare le altre sopra
 sudo iptables -A FORWARD -j DROP 
 
+    # TODO: DA ABILITARE REGOLE SOPRA SE IMPOSTIAMO FORWARDA A DROP
 
 
 # Permettere connessione nuova udp da management
@@ -104,7 +105,7 @@ then
     # manda tutti i pacchetti alla chain LOGGING
     sudo iptables -A FORWARD -j LOGGING 
 
-
+    # TODO: forse da mettere su
     # Permette di rispondere a connessioni già stabilite (ovviamente solo chi ha il permesso può iniziarle)
     sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT # FUNZIONA ANCHE PER UDP, SENZA QUESTA UDP NON RICEVE ACK
 
