@@ -3,7 +3,6 @@ import json
 import socket
 
 
-# fully functional
 def ping_test(ip):
     try:
         response = subprocess.run(
@@ -19,7 +18,6 @@ def ping_test(ip):
         return False
 
 
-# funziona
 def iperf_udp_test(ip):
     try:
         response = subprocess.run(
@@ -35,10 +33,6 @@ def iperf_udp_test(ip):
 
     except subprocess.CalledProcessError:
         return False
-    # except subprocess.TimeoutExpired:
-        # print("timeout")
-        # return False
-
 
 def iperf_tcp_test(ip):
     try:
