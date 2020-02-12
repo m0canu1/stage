@@ -47,7 +47,7 @@ def iperf_tcp_test(ip):
     try:
         response = subprocess.run(
             ['iperf', '-c', ip],
-            timeout=10,
+            timeout=15,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True  # return string not bytes
