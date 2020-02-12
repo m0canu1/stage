@@ -91,13 +91,22 @@ ip_list = [
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--verbose',
                     help='increase output verbosity', action='store_true')
+parser.add_argument('-t', '--test',
+                    help='which test to perform (different combinations between tcp, udp, ping)', nargs='+')
 args = parser.parse_args()
 
+print (args.verbose)
+print (args.test)
 
 print("\nTEST FROM " + socket.gethostname() + ":\n\n")
 
 
 for ip in ip_list:
-    run_test("PING: ", ping_test(ip))
-    run_test("UDP: ", iperf_udp_test(ip))
-    run_test("TCP: ", iperf_tcp_test(ip))
+
+    for test in args.test:
+        if (test == 'ping'):
+            run_test("PING: ", ping_test(ip))
+        elif (test == 'tcp'):
+            run_test("TCP: ", iperf_tcp_test(ip))
+        elif (test == 'udp'):
+            run_test("UDP: ", iperf_udp_test(ip))
