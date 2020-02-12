@@ -1,6 +1,7 @@
 import subprocess
 import json
 import socket
+import argparse
 
 
 def ping_test(ip):
@@ -10,6 +11,10 @@ def ping_test(ip):
             stdout=subprocess.PIPE,
             universal_newlines=True  # return string not bytes
         )
+
+        if(args.verbose):
+            print(response.stdout)
+
         if " 0% packet loss" in response.stdout:
             return True
 
@@ -28,11 +33,15 @@ def iperf_udp_test(ip):
             universal_newlines=True  # return string not bytes
         )
 
+        if(args.verbose):
+            print(response.stdout)
+
         if "Server Report:" in response.stdout:
             return True
 
     except subprocess.CalledProcessError:
         return False
+
 
 def iperf_tcp_test(ip):
     try:
@@ -44,6 +53,9 @@ def iperf_tcp_test(ip):
             universal_newlines=True  # return string not bytes
         )
 
+        if(args.verbose):
+            print(response.stdout)
+
         if " connected " in response.stdout:
             return True
     except subprocess.CalledProcessError:
@@ -53,31 +65,39 @@ def iperf_tcp_test(ip):
         return False
 
 
-ip_list = [
-    "172.168.1.128",
-    "172.168.2.100",
-    "172.168.2.128",
-    "172.168.3.100",
-    "172.168.3.130",
-    "172.168.4.100",
-    "172.168.4.128",
-    "172.168.5.100",
-    "172.168.5.128"
-]
+def run_test(str, flag):
+    if(flag):
+        print(str + ip + " -> OK.\n")
+        if(args.verbose):
+            print('='*80 + "\n")
+    else:
+        print(str + ip + " -> NOPE.\n")
+        if(args.verbose):
+            print('='*80 + "\n")
 
-print("TEST FROM " + socket.gethostname() + ":\n\n")
+
+ip_list = [
+            "172.168.1.128",
+            "172.168.2.100",
+            "172.168.2.128",
+            "172.168.3.100",
+            "172.168.3.130",
+            "172.168.4.100",
+            "172.168.4.128",
+            "172.168.5.100",
+            "172.168.5.128"
+          ]
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--verbose',
+                    help='increase output verbosity', action='store_true')
+args = parser.parse_args()
+
+
+print("\nTEST FROM " + socket.gethostname() + ":\n\n")
+
 
 for ip in ip_list:
-
-    if(ping_test(ip)):
-        print("PING: " + ip + " -> OK.\n")
-    else:
-        print("PING: " + ip + " -> NOPE.\n")
-    if(iperf_udp_test(ip)):
-        print("UDP: " + ip + " -> OK.\n")
-    else:
-        print("UDP: " + ip + " -> NOPE.\n")
-    if(iperf_tcp_test(ip)):
-        print("TCP: " + ip + " -> OK.\n")
-    else:
-        print("TCP: " + ip + " -> NOPE. \n")
+    run_test("PING: ", ping_test(ip))
+    run_test("UDP: ", iperf_udp_test(ip))
+    run_test("TCP: ", iperf_tcp_test(ip))
