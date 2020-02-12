@@ -7,8 +7,9 @@
 # -m = management interface
 # -r = masquerading mode [true for random addresses, false for no masquerading, set single or multiple (around "") IPs (for each team, in order)]
 # -t = team n interface (around quotes "")
+# -l = loglimit (set a limit to enable. No flag if you don't want to log at all)
 
-while getopts p:u:m:r:t: option
+while getopts p:l:u:m:r:t: option
 do
 case "${option}"
 in
@@ -17,6 +18,7 @@ u) UPLINK=${OPTARG};;
 m) MANAGEMENT_INTERFACE=${OPTARG};;
 r) MASQUERADING=(${OPTARG});; # LE PARENTESI SERVONO A TRASFORMARE LA STRINGA IN ARRAY
 t) TEAMS=(${OPTARG});; #lista delle interfacce, in ordine
+l) LOGLIMIT=${OPTARG};;
 esac
 done
 
@@ -41,11 +43,16 @@ sudo iptables -X LOGGING # elimina chain di LOGGING se esistente
 # DROP dei pacchetti da ricevere (incluso ping)
 sudo iptables -P INPUT DROP
 
-# Log di tutti i pacchetti entranti droppati
-sudo iptables -N LOGGING # crea nuova chain
-sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
-sudo iptables -A LOGGING -m limit --limit 1/min -j LOG --log-prefix "COMPETITION-LOG: " --log-level 4
-# sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
+
+if [ ${#LOGLIMIT} -gt 0 ]
+then
+    # Log di tutti i pacchetti entranti droppati
+    sudo iptables -N LOGGING # crea nuova chain
+    sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
+    sudo iptables -A LOGGING -m limit --limit $LOGLIMIT -j LOG --log-prefix "COMPETITION-LOG: " --log-level 4
+    # sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
+fi
+
 
 # ------------------------------------------------------------
 
@@ -74,7 +81,7 @@ sudo iptables -A INPUT -s 172.168.1.1 -j ACCEPT
 
 # Drop di tutti i pacchetti da inoltrare 
 # ?????????????????????? si dovrebbero attivare le altre sopra
-sudo iptables -A FORWARD -j DROP 
+sudo iptables -P FORWARD DROP
 
     # TODO: DA ABILITARE REGOLE SOPRA SE IMPOSTIAMO FORWARDA A DROP
 
@@ -100,10 +107,13 @@ then
     # SECONDA FASE
 
     # accept all sulla catena di forward
-    sudo iptables -A FORWARD -j ACCEPT 
+    sudo iptables -P FORWARD ACCEPT 
     
-    # manda tutti i pacchetti alla chain LOGGING
-    sudo iptables -A FORWARD -j LOGGING 
+    if [ ${#LOGLIMIT} -gt 0 ]
+    then
+        # manda tutti i pacchetti alla chain LOGGING
+        sudo iptables -A FORWARD -j LOGGING 
+    fi
 
     # TODO: forse da mettere su
     # Permette di rispondere a connessioni già stabilite (ovviamente solo chi ha il permesso può iniziarle)
