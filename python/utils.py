@@ -8,7 +8,7 @@ import yaml
 
 configfile = "competition.config"
 netplanfile = "50-cloud-init.yaml"
-fwrules = Path().parent + "fwrules"
+# fwrules = Path().parent + "fwrules"
 
 
 # dizionario per la configurazione netplan
@@ -19,14 +19,14 @@ netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
 
 
-def phase_one_fw():
-    # non completo
-    config = load_from_config()
+# def phase_one_fw():
+#     # non completo
+#     config = load_from_config()
 
-    subprocess.run("sudo", fwrules, "1", 
-                   "-u", config["UplinkInterface"], 
-                   "-m", config["ManagementInterface"],
-                   )
+#     subprocess.run("sudo", fwrules, "1", 
+#                    "-u", config["UplinkInterface"], 
+#                    "-m", config["ManagementInterface"],
+#                    )
 
 def enable_dhcp_uplink():
     config = load_from_netplanconfig()

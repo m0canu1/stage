@@ -1,0 +1,39 @@
+network:
+  ethernets:
+    enp2s0f2:
+      addresses:
+      - 172.168.3.100/24
+      dhcp4: false
+      dhcp6: false
+    vmnet2:
+      addresses:
+      - 172.168.1.128/24
+      dhcp4: false
+      dhcp6: false
+    vmnet3:
+      addresses:
+      - 172.168.2.100/24
+      dhcp4: false
+      dhcp6: false
+    vmnet4:
+      addresses:
+      - 172.168.5.100/24
+      dhcp4: false
+      dhcp6: false
+    vmnet5:
+      addresses:
+      - 172.168.6.100/24
+      dhcp4: false
+      dhcp6: false
+    vmnet8:
+      addresses:
+      - 172.168.7.100/24
+      dhcp4: false
+      dhcp6: false
+    wlp3s0:
+      addresses:
+      - 172.168.4.100/24
+      dhcp4: false
+      dhcp6: false
+  renderer: networkd
+  version: 2

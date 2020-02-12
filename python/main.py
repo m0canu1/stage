@@ -1,6 +1,7 @@
 import netifaces
 import sys
 import subprocess
+import argparse
 
 from utils import enable_dhcp_uplink, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 
@@ -86,5 +87,60 @@ def second_menu():
 
 
 if_list = get_interfaces_list_noloopback()
-first_menu()
+# first_menu()
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-I', '--interactive',
+                    help='configure in interactive mode', action='store_true')
+
+parser.add_argument('-G', '--get',
+                    help='get current configuration', action='store_true')
+
+parser.add_argument('-L', '--list',
+                    help='list all available interfaces', action='store_true')
+
+parser.add_argument('-p', '--phase',
+                    help='phase of the competition (1 or 2)')
+
+parser.add_argument('-ui', '--uplink_interface',
+                    help='name of the uplink interface')
+
+parser.add_argument('-ua', '--uplink_address',
+                    help='address of the uplink interface')
+
+parser.add_argument('-mi', '--management_interface',
+                    help='name of the management interface')
+
+parser.add_argument('-ma', '--management_interface_address',
+                    help='address of the management interface')
+
+parser.add_argument('-masq', '--masquerading',
+                    help='masquerading mode')
+
+parser.add_argument('-t', '--teams',
+                    help='teams\' interfaces')
+
+parser.add_argument('-l', '--loglimit',
+                    help='log limit. If not set, logging disabled')
+
+parser.add_argument('-s', '--set',
+                    help='configure competition directly from command line', nargs='?')
+args = parser.parse_args()
+
+# print(args.uplink)
+# print(args.uplink_interface)
+
+if(args.interactive):
+    first_menu()
+elif (args.get):
+    print_config()
+elif (args.list):
+    print('\n' + ', '.join(if_list).center(100)+'\n')
+else:
+    if(args.phase and args.uplink_interface and args.uplink_address and 
+        args.management_interface and args.management_interface_address and args.masquerading and args.teams):
+        print("chefigo")
+    else:
+        print("Some parameters missing. Retry!")
+    
