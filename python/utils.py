@@ -19,20 +19,12 @@ netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
 
 
-# def phase_one_fw():
-#     # non completo
-#     config = load_from_config()
-
-#     subprocess.run("sudo", fwrules, "1", 
-#                    "-u", config["UplinkInterface"], 
-#                    "-m", config["ManagementInterface"],
-#                    )
-
 def enable_dhcp_uplink():
     config = load_from_netplanconfig()
 
     config["network"]["ethernets"]["ens33"] = {}
     config["network"]["ethernets"]["ens33"]["dhcp4"] = True
+
 
 def yes_or_no():
     query = input('Vuoi modificare? [y/n]: ')
@@ -78,7 +70,6 @@ def save_to_config(config):
         f.close()
 
 
-
 def load_from_netplanconfig():
     """
     Carica la configurazione dal file *.yaml usato da Netplan
@@ -87,7 +78,7 @@ def load_from_netplanconfig():
     -------
     False
         se non è stato trovato alcun file *.yaml oppure se è corrotto (manomesso)
-    
+
     config: dic
         l'attuale configurazione contenuta nel file *.yaml di Netplan
     """
@@ -103,6 +94,7 @@ def load_from_netplanconfig():
         with open(netplanfile, 'w') as f:
             yaml.safe_dump(netplan_config, f)
         return False
+
 
 def save_to_netplanconfig(config):
     """
@@ -121,10 +113,10 @@ def print_config():
     """
     Legge la configurazione dal file .config
 
-    
+
     FileNotFoundError
         Se non è stato trovato nessun file di configurazione.
-    
+
     json.decoder.JSONDecodeError, KeyError
         Se il file di configurazione è vuoto oppure corrotto.
     """
@@ -169,8 +161,6 @@ def print_config():
         print('Il file di configurazione è vuoto o corrotto.')
 
 
-
-
 def phase_one():
     """
     Crea il file *.yaml per Netplan, per la FASE UNO
@@ -182,30 +172,35 @@ def phase_one():
 
     config = load_from_config()
 
-    vr_address = config['UplinkAddress'] + '/24'
-    vr_interface = config['UplinkInterface']
-    mm_address = config['ManagementInterfaceAddress'] + '/24'
     mm_interface = config['ManagementInterface']
+    mm_address = config['ManagementInterfaceAddress'] + '/24'
 
-    if_list = get_interfaces_list_noloopback()
-    if_list.pop(if_list.index(vr_interface))
-    if_list.pop(if_list.index(mm_interface))
-
-    netplan_config['network']['ethernets'][vr_interface] = {}
     netplan_config['network']['ethernets'][mm_interface] = {}
-
-    netplan_config['network']['ethernets'][vr_interface]['dhcp4'] = False
-    netplan_config['network']['ethernets'][vr_interface]['dhcp6'] = False
-
     netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
     netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
-
-    netplan_config['network']['ethernets'][vr_interface]['addresses'] = [vr_address]
     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [mm_address]
+
+
+    up_interface = config['UplinkInterface']
+    netplan_config['network']['ethernets'][up_interface] = {}
+
+    # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
+    if (config['UplinkAddress']):
+        up_address = config['UplinkAddress'] + '/24'
+        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
+        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
+        netplan_config['network']['ethernets'][up_interface]['addresses'] = [up_address]
+    else:
+        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
+        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
+
+    # TODO da inserire in una funzione la disabilitazione delle interfacce delle squadre
+    if_list = get_interfaces_list_noloopback()
+    if_list.pop(if_list.index(up_interface))
+    if_list.pop(if_list.index(mm_interface))
 
     for interface in if_list:
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
-
 
     save_to_netplanconfig(netplan_config)
 
@@ -215,10 +210,9 @@ def phase_one():
     return 'FASE 1: OK'
 
 
-
 def phase_two():
     """
-    Crea il file *.yaml per Netplan, per la FASE UNO
+    Crea il file *.yaml per Netplan, per la FASE DUE
 
     La FASE UNO viene ripetuta in ogni caso per accertarsi che il file .yaml sia
     scritto correttamente e coerentemente con il file .config. Ovvero che il file non sia corrotto,
@@ -245,12 +239,13 @@ def phase_two():
             netplan_config['network']['ethernets'][interface]['dhcp4'] = False
             netplan_config['network']['ethernets'][interface]['dhcp6'] = False
 
-            netplan_config['network']['ethernets'][interface]['addresses'] = [address]
-            
+            netplan_config['network']['ethernets'][interface]['addresses'] = [
+                address]
+
             save_to_netplanconfig(netplan_config)
         except:
             return 'FASE 2: ERRORE'
-    
+
     subprocess.run(["sudo", "netplan", "generate"])
     subprocess.run(["sudo", "netplan", "apply"])
     return 'FASE 2: OK'
@@ -265,6 +260,7 @@ def set_address_support(machine, config):
         flag = False
         while not flag:
             address = str(input("""UPLINK Address: """))
+            # TODO inserire try/catch
             if check_ip(address):
                 config["UplinkAddress"] = address
                 flag = True
@@ -338,7 +334,7 @@ def get_interfaces_list_noloopback():
     return if_list
 
 
-def set_teams_addresses(if_list, vr_address, mm_address):
+def set_teams_addresses(if_list, up_address, mm_address):
     """
     Imposta gli indirizzi delle interfacce rimanenti
 
@@ -346,7 +342,7 @@ def set_teams_addresses(if_list, vr_address, mm_address):
     ----------
     if_list : list 
         Lista delle interfacce rimanenti.
-    vr_address : str
+    up_address : str
         Indirizzo di Uplink
     mm_address : str 
         Indirizzo dell'interfaccia per la Macchina di Management
@@ -355,7 +351,10 @@ def set_teams_addresses(if_list, vr_address, mm_address):
     nteams = config['NumberOfTeams']
 
     try:
-        vr = int(vr_address.split('.')[2])
+        if (up_address):
+            up = int(up_address.split('.')[2])
+        else:
+            up = 0
         mm = int(mm_address.split('.')[2])
 
         ip = 1  # base of the second-last 8 bit of the IP
@@ -366,8 +365,9 @@ def set_teams_addresses(if_list, vr_address, mm_address):
                    (i)] = if_list[i-1]  # assegno l'interfaccia
             flag = False
             while not flag:
-                if (ip not in (vr, mm)):
-                    config["Team%dInterfaceAddress" % (i)] = '172.168.%d.100' % (ip)
+                if (ip not in (up, mm)):
+                    config["Team%dInterfaceAddress" %
+                           (i)] = '172.168.%d.100' % (ip)
                     flag = True
                 ip += 1
 
@@ -382,7 +382,6 @@ def choose_interface_support(machine, if_list, config):
     """
     Metodo di supporto per choose_interface()
     """
-
 
     print('Scegli tra le seguenti:\n')
     print(', '.join(if_list).center(100)+'\n')
@@ -417,7 +416,7 @@ def choose_interface(machine, if_list):
     machine : int
         0 : se per l'interfaccia di uplink
         1 : se per l'interfaccia usata dal management
-    
+
     if_list : list
         la lista con le interfacce disponibili per la scelta.
     """
@@ -480,7 +479,7 @@ def set_teams_number(maxteams):
     maxteams : int
         Numero massimo di squadre
     """
-    
+
     config = load_from_config()
 
     if("NumberOfTeams" in config):
@@ -496,7 +495,7 @@ def remove_quotes(fname):
     """
     Rimuove le virgolette da un file
     """
-    
+
     file = open(fname, 'r')
     data = file.read()
     data = data.replace("'", "")
@@ -511,6 +510,74 @@ def check_ip(ip):
 
     try:
         ipaddress.ip_address(ip)
-        return True
+
     except ValueError:
         return False
+
+def fw_rules_one():
+    True
+
+def fw_rules_two():
+    True
+
+def create_config_file(uplink_interface, up_addr,
+                       management_interface, management_interface_addr, teams_interfaces):
+    config = {}
+    try:
+        if(up_addr):
+            ipaddress.ip_address(up_addr)
+        ipaddress.ip_address(management_interface_addr)
+        config['NumberOfTeams'] = len(teams_interfaces)
+        config['UplinkInterface'] = uplink_interface
+        config['UplinkAddress'] = up_addr
+        config['ManagementInterface'] = management_interface
+        config["ManagementInterfaceAddress"] = management_interface_addr
+
+        save_to_config(config)
+
+        set_teams_addresses(teams_interfaces, up_addr,
+                        management_interface_addr)
+    except ValueError as identifier:
+        print(identifier)
+
+def create_netplan_config():
+    """
+    Crea il file *.yaml per Netplan
+
+    Ritorno
+    -------
+    Una stringa che conferma l'esito della creazione.
+    """
+
+    config = load_from_config()
+
+    mm_interface = config['ManagementInterface']
+    mm_address = config['ManagementInterfaceAddress'] + '/24'
+
+    netplan_config['network']['ethernets'][mm_interface] = {}
+    netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
+    netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
+    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
+        mm_address]
+
+    up_interface = config['UplinkInterface']
+    netplan_config['network']['ethernets'][up_interface] = {}
+
+    # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
+    if (config['UplinkAddress']):
+        up_address = config['UplinkAddress'] + '/24'
+        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
+        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
+        netplan_config['network']['ethernets'][up_interface]['addresses'] = [
+            up_address]
+    else:
+        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
+        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
+
+
+    save_to_netplanconfig(netplan_config)
+
+    subprocess.run(["sudo", "netplan", "generate"])
+    subprocess.run(["sudo", "netplan", "apply"])
+
+    return 'FASE 1: OK'

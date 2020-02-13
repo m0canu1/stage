@@ -3,7 +3,7 @@ import sys
 import subprocess
 import argparse
 
-from utils import enable_dhcp_uplink, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
+from utils import fw_rules_one, fw_rules_two, create_netplan_config, create_config_file, enable_dhcp_uplink, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
 
 vr = ''
 mngmt = ''
@@ -86,9 +86,6 @@ def second_menu():
             print('ERRORE di input.')
 
 
-if_list = get_interfaces_list_noloopback()
-# first_menu()
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-I', '--interactive',
@@ -97,7 +94,7 @@ parser.add_argument('-I', '--interactive',
 parser.add_argument('-G', '--get',
                     help='get current configuration', action='store_true')
 
-parser.add_argument('-L', '--list',
+parser.add_argument('-L', '--listinterfaces',
                     help='list all available interfaces', action='store_true')
 
 parser.add_argument('-p', '--phase',
@@ -119,7 +116,7 @@ parser.add_argument('-masq', '--masquerading',
                     help='masquerading mode')
 
 parser.add_argument('-t', '--teams',
-                    help='teams\' interfaces')
+                    help='teams\' interfaces', nargs='+')
 
 parser.add_argument('-l', '--loglimit',
                     help='log limit. If not set, logging disabled')
@@ -128,19 +125,39 @@ parser.add_argument('-s', '--set',
                     help='configure competition directly from command line', nargs='?')
 args = parser.parse_args()
 
-# print(args.uplink)
-# print(args.uplink_interface)
+
+if_list = get_interfaces_list_noloopback()
+
+
+
 
 if(args.interactive):
     first_menu()
 elif (args.get):
     print_config()
-elif (args.list):
+elif (args.listinterfaces):
     print('\n' + ', '.join(if_list).center(100)+'\n')
 else:
-    if(args.phase and args.uplink_interface and args.uplink_address and 
-        args.management_interface and args.management_interface_address and args.masquerading and args.teams):
-        print("chefigo")
+    if(args.phase and args.uplink_interface and
+            args.management_interface and args.management_interface_address and args.masquerading and args.teams):
+        try:
+            if_list.pop(if_list.index(args.uplink_interface))
+            if_list.pop(if_list.index(args.management_interface))
+            for interface in args.teams:
+                if_list.pop(if_list.index(interface))
+            create_config_file(args.uplink_interface,
+                               args.uplink_address, args.management_interface, args.management_interface_address, args.teams)
+
+            create_netplan_config()
+
+            if (args.phase == 1):
+                fw_rules_one()
+            if (args.phase == 2):
+                fw_rules_two()
+
+        except ValueError as identifier:
+            # print("Some of the defined interfaces do not exist. Retry!")
+            print(identifier)
+       
     else:
         print("Some parameters missing. Retry!")
-    
