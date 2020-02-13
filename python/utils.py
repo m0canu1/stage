@@ -9,7 +9,6 @@ import yaml
 
 configfile = "competition.config"
 netplanfile = "/etc/netplan/50-cloud-init.yaml"
-# fwrules = Path().parent + "fwrules"
 
 
 # dizionario per la configurazione netplan
@@ -18,13 +17,6 @@ netplan_config['network'] = {}
 netplan_config['network']['version'] = 2
 netplan_config['network']['renderer'] = 'networkd'
 netplan_config['network']['ethernets'] = {}
-
-
-def enable_dhcp_uplink():
-    config = load_from_netplanconfig()
-
-    config["network"]["ethernets"]["ens33"] = {}
-    config["network"]["ethernets"]["ens33"]["dhcp4"] = True
 
 
 def yes_or_no():
@@ -162,95 +154,93 @@ def print_config():
         print('Il file di configurazione è vuoto o corrotto.')
 
 
-def phase_one():
-    """
-    Crea il file *.yaml per Netplan, per la FASE UNO
+# def phase_one():
+#     """
+#     Crea il file *.yaml per Netplan, per la FASE UNO
 
-    Ritorno
-    -------
-    Una stringa che conferma l'esito della creazione.
-    """
+#     Ritorno
+#     -------
+#     Una stringa che conferma l'esito della creazione.
+#     """
 
-    config = load_from_config()
+#     config = load_from_config()
 
-    mm_interface = config['ManagementInterface']
-    mm_address = config['ManagementInterfaceAddress'] + '/24'
+#     mm_interface = config['ManagementInterface']
+#     mm_address = config['ManagementInterfaceAddress'] + '/24'
 
-    netplan_config['network']['ethernets'][mm_interface] = {}
-    netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
-    netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
-    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
-        mm_address]
+#     netplan_config['network']['ethernets'][mm_interface] = {}
+#     netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
+#     netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
+#     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
+#         mm_address]
 
-    up_interface = config['UplinkInterface']
-    netplan_config['network']['ethernets'][up_interface] = {}
+#     up_interface = config['UplinkInterface']
+#     netplan_config['network']['ethernets'][up_interface] = {}
 
-    # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
-    if (config['UplinkAddress']):
-        up_address = config['UplinkAddress'] + '/24'
-        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
-        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
-        netplan_config['network']['ethernets'][up_interface]['addresses'] = [
-            up_address]
-    else:
-        netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
-        netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
+#     # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
+#     if (config['UplinkAddress']):
+#         up_address = config['UplinkAddress'] + '/24'
+#         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
+#         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
+#         netplan_config['network']['ethernets'][up_interface]['addresses'] = [
+#             up_address]
+#     else:
+#         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
+#         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
 
-    # TODO da inserire in una funzione la disabilitazione delle interfacce delle squadre
-    if_list = get_interfaces_list_noloopback()
-    if_list.pop(if_list.index(up_interface))
-    if_list.pop(if_list.index(mm_interface))
+#     save_to_netplanconfig(netplan_config)
+
+#     subprocess.run(["sudo", "netplan", "apply"])
+
+
+#     return 'FASE 1: OK'
+
+
+def disable_team_interfaces(if_list):
 
     for interface in if_list:
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
 
-    save_to_netplanconfig(netplan_config)
 
-    subprocess.run(["sudo", "netplan", "generate"])
-    subprocess.run(["sudo", "netplan", "apply"])
+# def phase_two():
+#     """
+#     Crea il file *.yaml per Netplan, per la FASE DUE
 
-    return 'FASE 1: OK'
+#     La FASE UNO viene ripetuta in ogni caso per accertarsi che il file .yaml sia
+#     scritto correttamente e coerentemente con il file .config. Ovvero che il file non sia corrotto,
+#     scritto male, o scritto bene ma con parametri sbagliati (che non sono contenuti nel file .config)
 
+#     Ritorno
+#     -------
+#     Una stringa che conferma l'esito della creazione.
+#     """
 
-def phase_two():
-    """
-    Crea il file *.yaml per Netplan, per la FASE DUE
+#     phase_one()
+#     netplan_config = load_from_netplanconfig()
 
-    La FASE UNO viene ripetuta in ogni caso per accertarsi che il file .yaml sia
-    scritto correttamente e coerentemente con il file .config. Ovvero che il file non sia corrotto,
-    scritto male, o scritto bene ma con parametri sbagliati (che non sono contenuti nel file .config)
+#     config = load_from_config()
 
-    Ritorno
-    -------
-    Una stringa che conferma l'esito della creazione.
-    """
+#     nteams = config['NumberOfTeams']
 
-    phase_one()
-    netplan_config = load_from_netplanconfig()
+#     for i in range(1, nteams+1):
+#         try:
+#             interface = config['Team%dInterface' % (i)]
+#             address = config['Team%dInterfaceAddress' % (i)] + '/24'
 
-    config = load_from_config()
+#             netplan_config['network']['ethernets'][interface] = {}
+#             netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+#             netplan_config['network']['ethernets'][interface]['dhcp6'] = False
 
-    nteams = config['NumberOfTeams']
+#             netplan_config['network']['ethernets'][interface]['addresses'] = [
+#                 address]
 
-    for i in range(1, nteams+1):
-        try:
-            interface = config['Team%dInterface' % (i)]
-            address = config['Team%dInterfaceAddress' % (i)] + '/24'
+#             save_to_netplanconfig(netplan_config)
+#         except:
+#             return 'FASE 2: ERRORE'
 
-            netplan_config['network']['ethernets'][interface] = {}
-            netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-            netplan_config['network']['ethernets'][interface]['dhcp6'] = False
-
-            netplan_config['network']['ethernets'][interface]['addresses'] = [
-                address]
-
-            save_to_netplanconfig(netplan_config)
-        except:
-            return 'FASE 2: ERRORE'
-
-    subprocess.run(["sudo", "netplan", "generate"])
-    subprocess.run(["sudo", "netplan", "apply"])
-    return 'FASE 2: OK'
+#     subprocess.run(["sudo", "netplan", "generate"])
+#     subprocess.run(["sudo", "netplan", "apply"])
+#     return 'FASE 2: OK'
 
 
 def set_address_support(machine, config):
@@ -367,6 +357,8 @@ def set_teams_addresses(if_list, up_address, mm_address):
         ip = 1  # base of the second-last 8 bit of the IP
         # Assegna tutte le interfacce rimanenti
 
+        # TODO bug, se il numero di squadre è inferiore alle interfacce le interfacce rimanenti non verranno modificate
+        # si riscontrano così più subnet uguali
         for i in range(1, nteams+1):
             config["Team%dInterface" %
                    (i)] = if_list[i-1]  # assegno l'interfaccia
@@ -498,18 +490,6 @@ def set_teams_number(maxteams):
         set_teams_number_support(maxteams, config)
 
 
-def remove_quotes(fname):
-    """
-    Rimuove le virgolette da un file
-    """
-
-    file = open(fname, 'r')
-    data = file.read()
-    data = data.replace("'", "")
-    file = open(fname, 'w')
-    file.write(data)
-
-
 def check_ip(ip):
     """
     Verifica se un indirizzo ip è valido.
@@ -517,7 +497,7 @@ def check_ip(ip):
 
     try:
         ipaddress.ip_address(ip)
-
+        return True
     except ValueError:
         return False
 
@@ -528,6 +508,21 @@ def fw_rules_one():
 
 def fw_rules_two():
     True
+
+
+def create_netplan_config_interactive():
+    config = load_from_config()
+
+    management_interface = config['ManagementInterface']
+    management_interface_addr = config['ManagementInterfaceAddress']
+    up_interface = config['UplinkInterface']
+    up_address = config['UplinkAddress']
+    nteams = config['NumberOfTeams']
+
+    create_netplan_config(
+        management_interface, management_interface_addr, up_interface, up_address, nteams)
+
+    subprocess.run(["sudo", "netplan", "apply"])
 
 
 def create_config_file(up_interface, up_address,
@@ -544,12 +539,10 @@ def create_config_file(up_interface, up_address,
         config["ManagementInterfaceAddress"] = management_interface_addr
 
         save_to_config(config)
-
         reset_netplan(up_interface)
 
         set_teams_addresses(teams_interfaces, up_address,
                             management_interface_addr)
-
         create_netplan_config(management_interface, management_interface_addr,
                               up_interface, up_address, teams_interfaces)
 
@@ -568,7 +561,7 @@ def reset_netplan(up_interface):
     subprocess.run(["sudo", "netplan", "apply"])
 
 
-def create_netplan_config(management_interface, management_interface_addr, up_interface, up_address, teams_interfaces):
+def create_netplan_config(management_interface, management_interface_addr, up_interface, up_address, nteams):
     """
     Crea il file *.yaml per Netplan
     """
@@ -596,7 +589,7 @@ def create_netplan_config(management_interface, management_interface_addr, up_in
         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
 
     # SETTA INTERFACCE SQUADRE
-    for i in range(1, len(teams_interfaces) + 1):
+    for i in range(1, nteams + 1):
         interface = config['Team%dInterface' % (i)]
         address = config['Team%dInterfaceAddress' % (i)] + '/24'
 

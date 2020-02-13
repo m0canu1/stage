@@ -3,7 +3,7 @@ import sys
 import subprocess
 import argparse
 
-from utils import fw_rules_one, fw_rules_two, create_netplan_config, create_config_file, enable_dhcp_uplink, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address, phase_one, phase_two
+from utils import create_netplan_config_interactive, fw_rules_one, fw_rules_two, create_netplan_config, create_config_file, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address
 
 vr = ''
 mngmt = ''
@@ -37,54 +37,23 @@ def first_menu():
         try:
             menu = int(input("""
                 1. Visualizzare l'attuale configurazione.
-                2. Scelta delle fasi
-                3. Abilita dhcp per uplink.
+                2. Configura interfacce
+                3. Scelta delle fasi
                 0. Quit.
             """))
             if menu == 1:
                 print_config()
             elif menu == 2:
-                second_menu()
-            elif menu == 3:
-                enable_dhcp_uplink()
+                change_config()
+                create_netplan_config_interactive()
+            # elif menu == 3:
+                # second_menu()
             elif (menu) == 0:
                 sys.exit
             else:
                 print("Your choice (%d) is wrong. Please, try again." % (menu))
         except ValueError:
             print('ERRORE di input.')
-
-
-def second_menu():
-    # Scelta delle fasi
-    menu = -1
-    while menu == -1:
-        try:
-            menu = int(input("""
-                1. Phase 1 (only management allowed).
-                2. Phase 2 (All teams allowed).
-                0. Go Back.
-                """))
-            if (menu) == 1:
-                if(change_config()):
-                    print(phase_one())
-                    # subprocess.run(["sudo", "./fwrules", "1"])
-                else:
-                    print(
-                        "ERRORE: Indirizzi di UPLINK e/o Interfaccia di Management errati, ricontrolla.")
-            elif (menu) == 2:
-                change_config()
-                print(phase_two())
-
-                # subprocess.run(["sudo", "./fwrules", "2"])
-
-            elif (menu) == 0:
-                first_menu()
-            else:
-                print("Your choice (%d) doesn't exit. Please, try again." % (menu))
-        except ValueError:
-            print('ERRORE di input.')
-
 
 
 parser = argparse.ArgumentParser()
@@ -129,8 +98,6 @@ args = parser.parse_args()
 if_list = get_interfaces_list_noloopback()
 
 
-
-
 if(args.interactive):
     first_menu()
 elif (args.get):
@@ -156,6 +123,6 @@ else:
         except ValueError as identifier:
             # print("Some of the defined interfaces do not exist. Retry!")
             print(identifier)
-       
+
     else:
         print("Some parameters missing. Retry!")
