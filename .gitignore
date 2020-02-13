@@ -15,6 +15,6 @@ thesis/thesis.aux
 thesis/thesis.fdb_latexmk
 thesis/thesis.fls
 thesis/thesis.log
-python/__pycache__/utils.cpython-38.pyc
+python/__pycache__/
 python/50-cloud-init.yaml
 python/competition.config
