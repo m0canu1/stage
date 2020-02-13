@@ -148,8 +148,6 @@ else:
             create_config_file(args.uplink_interface,
                                args.uplink_address, args.management_interface, args.management_interface_address, args.teams)
 
-            create_netplan_config()
-
             if (args.phase == 1):
                 fw_rules_one()
             if (args.phase == 2):

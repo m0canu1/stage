@@ -3,7 +3,7 @@ import json
 import subprocess
 from pathlib import Path
 
-import netifaces
+import netifaces as ni
 import yaml
 
 configfile = "competition.config"
@@ -328,7 +328,7 @@ def get_interfaces_list_noloopback():
         con le interfacce disponibili per la gara
     """
 
-    if_list = netifaces.interfaces()
+    if_list = ni.interfaces()
     if_list.pop(if_list.index('lo'))
 
     return if_list
@@ -354,7 +354,9 @@ def set_teams_addresses(if_list, up_address, mm_address):
         if (up_address):
             up = int(up_address.split('.')[2])
         else:
-            up = 0
+            up = ni.ifaddresses(config['UplinkInterface'])[ni.AF_INET][0]['addr']
+            up = int(up.split('.')[2])
+
         mm = int(mm_address.split('.')[2])
 
         ip = 1  # base of the second-last 8 bit of the IP
@@ -520,64 +522,69 @@ def fw_rules_one():
 def fw_rules_two():
     True
 
-def create_config_file(uplink_interface, up_addr,
+def create_config_file(up_interface, up_address,
                        management_interface, management_interface_addr, teams_interfaces):
     config = {}
     try:
-        if(up_addr):
-            ipaddress.ip_address(up_addr)
+        if(up_address):
+            ipaddress.ip_address(up_address)
         ipaddress.ip_address(management_interface_addr)
         config['NumberOfTeams'] = len(teams_interfaces)
-        config['UplinkInterface'] = uplink_interface
-        config['UplinkAddress'] = up_addr
+        config['UplinkInterface'] = up_interface
+        config['UplinkAddress'] = up_address
         config['ManagementInterface'] = management_interface
         config["ManagementInterfaceAddress"] = management_interface_addr
 
         save_to_config(config)
 
-        set_teams_addresses(teams_interfaces, up_addr,
-                        management_interface_addr)
+        set_teams_addresses(teams_interfaces, up_address, management_interface_addr)
+
+        create_netplan_config(management_interface, management_interface_addr, up_interface, up_address, teams_interfaces)
+
     except ValueError as identifier:
         print(identifier)
 
-def create_netplan_config():
+def create_netplan_config(management_interface, management_interface_addr, up_interface, up_address, teams_interfaces):
     """
     Crea il file *.yaml per Netplan
-
-    Ritorno
-    -------
-    Una stringa che conferma l'esito della creazione.
     """
 
     config = load_from_config()
 
-    mm_interface = config['ManagementInterface']
-    mm_address = config['ManagementInterfaceAddress'] + '/24'
+    management_interface_addr = management_interface_addr + '/24'
 
-    netplan_config['network']['ethernets'][mm_interface] = {}
-    netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
-    netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
-    netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
-        mm_address]
+    netplan_config['network']['ethernets'][management_interface] = {}
+    netplan_config['network']['ethernets'][management_interface]['dhcp4'] = False
+    netplan_config['network']['ethernets'][management_interface]['dhcp6'] = False
+    netplan_config['network']['ethernets'][management_interface]['addresses'] = [management_interface_addr]
 
-    up_interface = config['UplinkInterface']
+
     netplan_config['network']['ethernets'][up_interface] = {}
-
     # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
-    if (config['UplinkAddress']):
-        up_address = config['UplinkAddress'] + '/24'
+    if (up_address):
+        up_address = up_address + '/24'
         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
-        netplan_config['network']['ethernets'][up_interface]['addresses'] = [
-            up_address]
+        netplan_config['network']['ethernets'][up_interface]['addresses'] = [up_address]
     else:
         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
 
+    # SETTA INTERFACCE SQUADRE
+    for i in range(1, len(teams_interfaces) + 1):
+        interface = config['Team%dInterface' % (i)]
+        address = config['Team%dInterfaceAddress' % (i)] + '/24'
+
+        netplan_config['network']['ethernets'][interface] = {}
+        netplan_config['network']['ethernets'][interface]['dhcp4'] = False
+        netplan_config['network']['ethernets'][interface]['dhcp6'] = False
+
+        netplan_config['network']['ethernets'][interface]['addresses'] = [address]
+
 
     save_to_netplanconfig(netplan_config)
 
-    subprocess.run(["sudo", "netplan", "generate"])
-    subprocess.run(["sudo", "netplan", "apply"])
+    # subprocess.run(["sudo", "netplan", "generate"])
+    # subprocess.run(["sudo", "netplan", "apply"])
 
-    return 'FASE 1: OK'
+    # print("errorino 222")
