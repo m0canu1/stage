@@ -27,9 +27,6 @@ def change_config():
     # Indirizzo della Macchina di Management
     mngmt = set_address(1)
 
-    # if_list rimane con le interfacce disponibili per le squadre
-    return set_teams_addresses(if_list, vr, mngmt)
-
 
 def first_menu():
     menu = -1
@@ -45,7 +42,7 @@ def first_menu():
                 print_config()
             elif menu == 2:
                 change_config()
-                create_netplan_config_interactive()
+                create_netplan_config_interactive(if_list)
             # elif menu == 3:
                 # second_menu()
             elif (menu) == 0:

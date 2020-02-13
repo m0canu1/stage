@@ -196,12 +196,6 @@ def print_config():
 #     return 'FASE 1: OK'
 
 
-def disable_team_interfaces(if_list):
-
-    for interface in if_list:
-        subprocess.run(["ip", "link", "set", "dev", interface, "down"])
-
-
 # def phase_two():
 #     """
 #     Crea il file *.yaml per Netplan, per la FASE DUE
@@ -342,39 +336,35 @@ def set_teams_addresses(if_list, up_address, mm_address):
     config = load_from_config()
     nteams = config['NumberOfTeams']
 
-    try:
-        if (up_address):
-            up = int(up_address.split('.')[2])
-        else:
-            print("Waiting 2 sec. for uplink to get the ip.")
-            time.sleep(2)
-            up = ni.ifaddresses(config['UplinkInterface'])[
-                ni.AF_INET][0]['addr']
-            up = int(up.split('.')[2])
+    if (up_address):
+        up = int(up_address.split('.')[2])
+    else:
+        print("Waiting 2 sec. for uplink to get the ip.")
+        time.sleep(2)
+        up = ni.ifaddresses(config['UplinkInterface'])[
+            ni.AF_INET][0]['addr']
+        up = int(up.split('.')[2])
 
-        mm = int(mm_address.split('.')[2])
+    mm = int(mm_address.split('.')[2])
 
-        ip = 1  # base of the second-last 8 bit of the IP
-        # Assegna tutte le interfacce rimanenti
+    ip = 1  # base of the second-last 8 bit of the IP
+    # Assegna tutte le interfacce rimanenti
 
-        # TODO bug, se il numero di squadre è inferiore alle interfacce le interfacce rimanenti non verranno modificate
-        # si riscontrano così più subnet uguali
-        for i in range(1, nteams+1):
-            config["Team%dInterface" %
-                   (i)] = if_list[i-1]  # assegno l'interfaccia
-            flag = False
-            while not flag:
-                if (ip not in (up, mm)):
-                    config["Team%dInterfaceAddress" %
-                           (i)] = '172.168.%d.100' % (ip)
-                    flag = True
-                ip += 1
+    for i in range(1, nteams+1):
+        config["Team%dInterface" %
+                (i)] = if_list[0]  # assegno l'interfaccia
+        if_list.pop(0) # rimuove l'interfaccia appena assegnata
+        flag = False
+        while not flag:
+            if (ip not in (up, mm)):
+                config["Team%dInterfaceAddress" %
+                        (i)] = '172.168.%d.100' % (ip)
+                flag = True
+            ip += 1
 
-        save_to_config(config)
-        return True
-    except IndexError:
-        # print('ERRORE: Indirizzi del Router e/o Interfaccia di Management errati, ricontrolla.')
-        return False
+    disable_interfaces(if_list)
+
+    save_to_config(config)
 
 
 def choose_interface_support(machine, if_list, config):
@@ -510,7 +500,14 @@ def fw_rules_two():
     True
 
 
-def create_netplan_config_interactive():
+def disable_interfaces(if_list):
+
+    for interface in if_list:
+        subprocess.run(["ip", "link", "set", "dev", interface, "down"])
+        print("Disabled: " + interface)
+
+
+def create_netplan_config_interactive(if_list):
     config = load_from_config()
 
     management_interface = config['ManagementInterface']
@@ -518,6 +515,8 @@ def create_netplan_config_interactive():
     up_interface = config['UplinkInterface']
     up_address = config['UplinkAddress']
     nteams = config['NumberOfTeams']
+
+    set_teams_addresses(if_list, up_address, management_interface_addr)
 
     create_netplan_config(
         management_interface, management_interface_addr, up_interface, up_address, nteams)
