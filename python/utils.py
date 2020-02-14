@@ -154,89 +154,6 @@ def print_config():
         print('Il file di configurazione è vuoto o corrotto.')
 
 
-# def phase_one():
-#     """
-#     Crea il file *.yaml per Netplan, per la FASE UNO
-
-#     Ritorno
-#     -------
-#     Una stringa che conferma l'esito della creazione.
-#     """
-
-#     config = load_from_config()
-
-#     mm_interface = config['ManagementInterface']
-#     mm_address = config['ManagementInterfaceAddress'] + '/24'
-
-#     netplan_config['network']['ethernets'][mm_interface] = {}
-#     netplan_config['network']['ethernets'][mm_interface]['dhcp4'] = False
-#     netplan_config['network']['ethernets'][mm_interface]['dhcp6'] = False
-#     netplan_config['network']['ethernets'][mm_interface]['addresses'] = [
-#         mm_address]
-
-#     up_interface = config['UplinkInterface']
-#     netplan_config['network']['ethernets'][up_interface] = {}
-
-#     # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
-#     if (config['UplinkAddress']):
-#         up_address = config['UplinkAddress'] + '/24'
-#         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = False
-#         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = False
-#         netplan_config['network']['ethernets'][up_interface]['addresses'] = [
-#             up_address]
-#     else:
-#         netplan_config['network']['ethernets'][up_interface]['dhcp4'] = True
-#         netplan_config['network']['ethernets'][up_interface]['dhcp6'] = True
-
-#     save_to_netplanconfig(netplan_config)
-
-#     subprocess.run(["sudo", "netplan", "apply"])
-
-
-#     return 'FASE 1: OK'
-
-
-# def phase_two():
-#     """
-#     Crea il file *.yaml per Netplan, per la FASE DUE
-
-#     La FASE UNO viene ripetuta in ogni caso per accertarsi che il file .yaml sia
-#     scritto correttamente e coerentemente con il file .config. Ovvero che il file non sia corrotto,
-#     scritto male, o scritto bene ma con parametri sbagliati (che non sono contenuti nel file .config)
-
-#     Ritorno
-#     -------
-#     Una stringa che conferma l'esito della creazione.
-#     """
-
-#     phase_one()
-#     netplan_config = load_from_netplanconfig()
-
-#     config = load_from_config()
-
-#     nteams = config['NumberOfTeams']
-
-#     for i in range(1, nteams+1):
-#         try:
-#             interface = config['Team%dInterface' % (i)]
-#             address = config['Team%dInterfaceAddress' % (i)] + '/24'
-
-#             netplan_config['network']['ethernets'][interface] = {}
-#             netplan_config['network']['ethernets'][interface]['dhcp4'] = False
-#             netplan_config['network']['ethernets'][interface]['dhcp6'] = False
-
-#             netplan_config['network']['ethernets'][interface]['addresses'] = [
-#                 address]
-
-#             save_to_netplanconfig(netplan_config)
-#         except:
-#             return 'FASE 2: ERRORE'
-
-#     subprocess.run(["sudo", "netplan", "generate"])
-#     subprocess.run(["sudo", "netplan", "apply"])
-#     return 'FASE 2: OK'
-
-
 def set_address_support(machine, config):
     """
     Metodo di supporto per set_address()
@@ -352,13 +269,13 @@ def set_teams_addresses(if_list, up_address, mm_address):
 
     for i in range(1, nteams+1):
         config["Team%dInterface" %
-                (i)] = if_list[0]  # assegno l'interfaccia
-        if_list.pop(0) # rimuove l'interfaccia appena assegnata
+               (i)] = if_list[0]  # assegno l'interfaccia
+        if_list.pop(0)  # rimuove l'interfaccia appena assegnata
         flag = False
         while not flag:
             if (ip not in (up, mm)):
                 config["Team%dInterfaceAddress" %
-                        (i)] = '172.168.%d.100' % (ip)
+                       (i)] = '172.168.%d.100' % (ip)
                 flag = True
             ip += 1
 
@@ -492,19 +409,66 @@ def check_ip(ip):
         return False
 
 
-def fw_rules_one():
-    True
+def fw_rules_interactive(phase):
+    config = load_from_config()
+
+    config['Masquerading'] = input("""
+                Choose masquerading mode:
+
+                false -> no masquerading
+                true -> random masquerading
+                single ip -> will be used to mask all teams with the same
+                ip for every team -> each ip will be used to mask each team (in order)
+                
+                NOTE: There are %d teams!
+
+                """ % (config['NumberOfTeams']))
+    config['Log'] = input("""
+                Chosse masquerading mode:
+
+                false -> no logging
+                value -> set a limit (eg. 3/sec, 3/min). If you omit the time measure, the default wil be in seconds.
+                
+                """)
+
+    save_to_config(config)
+
+    fw_rules(phase)
 
 
-def fw_rules_two():
-    True
+def fw_rules(phase):
+    try:
+        config = load_from_config()
+        u_interface = config['UplinkInterface']
+        m_interface = config['ManagementInterface']
+        log = config['Log']
+        masquerading = config['Masquerading']
+        tmp = []
+        for i in range(1, config["NumberOfTeams"] + 1):
+            tmp.append(config['Team%dInterface' % (i)])
+
+        teams_interfaces = "\"" + ' '.join(tmp) + "\""
+
+        response = subprocess.run(
+            ["sudo", "./fwrules", "-p", str(phase), "-u", u_interface, "-m", m_interface, "-r",
+                masquerading, "-t", teams_interfaces, "-l", log],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        )
+        print(response.stdout)
+
+    except KeyError:
+        print("ERROR! Check your config.")
+    except subprocess.CalledProcessError as identifier:
+        print(identifier)
 
 
 def disable_interfaces(if_list):
 
     for interface in if_list:
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
-        print("Disabled: " + interface)
+        # print("Disabled: " + interface)
 
 
 def create_netplan_config_interactive(if_list):
@@ -525,7 +489,7 @@ def create_netplan_config_interactive(if_list):
 
 
 def create_config_file(up_interface, up_address,
-                       management_interface, management_interface_addr, teams_interfaces):
+                       management_interface, masquerading, management_interface_addr, teams_interfaces, log):
     config = {}
     try:
         if(up_address):
@@ -535,15 +499,18 @@ def create_config_file(up_interface, up_address,
         config['UplinkInterface'] = up_interface
         config['UplinkAddress'] = up_address
         config['ManagementInterface'] = management_interface
-        config["ManagementInterfaceAddress"] = management_interface_addr
+        config['ManagementInterfaceAddress'] = management_interface_addr
+        config['Masquerading'] = masquerading
+        config['Log'] = log
 
         save_to_config(config)
         reset_netplan(up_interface)
 
         set_teams_addresses(teams_interfaces, up_address,
                             management_interface_addr)
+
         create_netplan_config(management_interface, management_interface_addr,
-                              up_interface, up_address, teams_interfaces)
+                              up_interface, up_address, len(teams_interfaces))
 
         subprocess.run(["sudo", "netplan", "apply"])
 
