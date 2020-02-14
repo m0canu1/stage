@@ -39,7 +39,7 @@ sudo iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADE
 
 
 
-if [ ${#LOGLIMIT} -gt 0 ]
+if [ $LOGLIMIT != false ]
 then
     # Log di tutti i pacchetti entranti e forwardati
     sudo iptables -N LOGGING # crea nuova chain
@@ -47,7 +47,6 @@ then
     sudo iptables -A LOGGING -m limit --limit $LOGLIMIT -j LOG --log-prefix "COMPETITION-LOG: " --log-level 4
     # sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
     sudo iptables -A FORWARD -j LOGGING 
-
 fi
 
 
