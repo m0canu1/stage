@@ -112,6 +112,8 @@ parser.add_argument('-t', '--teams',
 parser.add_argument('-l', '--loglimit',
                     help='log limit. If false logging disabled')
 
+parser.add_argument('-s', '--set',
+                    help='configure competition directly from command line', nargs='?')
 args = parser.parse_args()
 
 
@@ -131,8 +133,8 @@ else:
             if_list.pop(if_list.index(args.uplink_interface))
             if_list.pop(if_list.index(args.management_interface))
 
-            for interface in args.teams:
-                if_list.pop(if_list.index(interface))
+            # for interface in args.teams:
+            #     if_list.pop(if_list.index(interface))
 
             create_config_file(args.uplink_interface,
                                args.uplink_address, args.management_interface, args.masquerading, args.management_interface_address, args.teams, args.loglimit)
