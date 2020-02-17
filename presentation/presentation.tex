@@ -3,7 +3,11 @@
 \usepackage{epstopdf}
 \usepackage{tikz}
 \usetikzlibrary{chains}
+\usepackage{listings}
 
+\lstdefinestyle{mystyle}{                  
+    basicstyle=\tiny
+}
 \title[Cyber Range]{Design and Developement of a Cyber Range}
 % \subtitle{Using Beamer}
 \author[A. Mocanu]{Alexandru Mocanu}
@@ -119,6 +123,79 @@
 
 \end{frame}
 
+\section{Tools \& Software}
+\begin{frame}
+    \frametitle{Software}
+    \begin{itemize}
+        \item <1-> iptables
+        \item <2-> netplan
+        \item <3-> script python
+        \item <4-> script bash
+    \end{itemize}
+\end{frame}
+
+
+\subsection*{iptables}
+\begin{frame}
+    \frametitle{Definizione}
+
+    Iptables è un potente firewall integrato nel kernel Linux.
+    Permette di definire, tramite regole, il filtraggio, la manipolazione dei pacchetti ed il NAT.
+    \\~\\
+    È strutturato in \textbf{tabelle}, ognuna contiene le proprie \textbf{catene} che possono, anche, essere definite dall'utente.
+    \\~\\
+    Ogni catena è una \textit{lista di regole} che specificano l'\textbf{azione} da intraprendere con i pacchetti che corrispondono alla regole.
+    \\~\\
+    Quest'\textit{azione} corrisponde al \textbf{target}.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{TARGETS}
+
+    Una regola di firewall specifica il criterio di selezione dei pacchetti ed il \textbf{target}.
+    \\~\\
+    Se il pacchetto non corrisponde $\rightarrow$ verrà esaminata la regola successiva.\\
+    Se il pacchetto corrisponde $\rightarrow$ verrà intrapresa l'azione definita dal \textit{target}, che può essere:
+    \begin{itemize}
+        \item ACCEPT
+        \item DROP
+        \item RETURN
+        \item catena definita dall'utente
+    \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{CHAINS}
+
+    
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{TABLES}
+    Ci sono 5 tabelle indipendenti:
+    \begin{description}
+        \item[filter]<1-> defr
+        \item[nat]<2->
+        \item[mangle]<3->
+        \item[raw]<4->
+        \item[security]<5->    
+    \end{description}
+\end{frame}
+
+\subsection*{netplan}
+
+
+\subsection*{script python}
+
+
+\subsection*{script bash}
+
+
 \section{Regole Firewall}
 
 
@@ -128,34 +205,228 @@
 \subsubsection{Obiettivi}
 \begin{frame}
     \frametitle{Obiettivi Fase 1}
-
+    \begin{itemize}
+        \item<1-> Isolamento dei Team
+        \item<2-> Solo Management e Virtual Router possono iniziare una connessione verso gli altri
+        \item<3-> Solo Management e Virtual Router possono connettersi all'esterno, attraverso l'UPLINK
+        \item<4-> LOG dei pacchetti entranti e dei pacchetti inoltrati
+    \end{itemize}
 
 \end{frame}
 
+\lstset{style=mystyle}
 \subsubsection{Regole specifiche per il Virtual Router}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per il Virtual Router}
-    \begin{itemize}
-        \item aa
-    \end{itemize}
+    Connessione all'esterno attraverso UPLINK
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P OUTPUT ACCEPT
+
+        
+        $ iptables -P INPUT DROP
+        
+
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT           
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Virtual Router}
+    Ricevere connessioni da MANAGEMENT (qualsiasi tipo)
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P INPUT DROP
+        
+        
+        $ iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
+        
+        
+        $ iptables -P OUTPUT ACCEPT           
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Virtual Router}
+    Connessioni ai TEAM e ricezione risposta
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P OUTPUT ACCEPT
+        
+        
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT           
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Virtual Router}
+    Connessione loopback
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P OUTPUT ACCEPT
+
+
+        $ iptables -A INPUT -i lo -j ACCEPT           
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Virtual Router}
+    Blocco connessioni dall'esterno e dai TEAM (se non iniziate da VR)
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P INPUT DROP
+
+
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
 \end{frame}
 
 
 \subsubsection{Regole specifiche per il Management}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per il Management}
-    \begin{itemize}
-        \item aaa
-    \end{itemize}
+    Connessione all'esterno attraverso UPLINK
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD DROP
 
+        
+        $ iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADE
+        
+        
+        $ iptables -A FORWARD -i $MANAGEMENT_INTERFACE -j ACCEPT
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Connessione al VIRTUAL ROUTER
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P INPUT DROP
+        
+        
+        $ iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
+        
+        
+        $ iptables -P OUTPUT ACCEPT
+
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Connessione ai TEAM
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD DROP
+        
+        
+        $ iptables -A FORWARD -i $MANAGEMENT_INTERFACE -j ACCEPT
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Blocco connessioni dall'esterno e dai TEAM (se non iniziate da MANAGEMENT)
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P INPUT DROP
+
+
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
 \end{frame}
 
 \subsubsection{Regole specifiche per i Team}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per i Team}
+    Rispondere a connessioni iniziate da MANAGEMENT
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD DROP
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
+
+\end{frame}
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per i Team}
+    Rispondere a connessioni iniziate da VR
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P INPUT DROP
+        
+        
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per i Team}
+    Blocco inizio connessioni verso:
     \begin{itemize}
-        \item aaa
+        \item MANAGEMENT
+            \begin{lstlisting}
+        $ iptables -P FORWARD DROP
+            \end{lstlisting}
+        \item VIRTUAL ROUTER
+            \begin{lstlisting}
+        $ iptables -P INPUT DROP  
+            \end{lstlisting}
+        \item altri TEAM
+            \begin{lstlisting}
+        $ iptables -P FORWARD DROP
+            \end{lstlisting}
+        \item esterno tramite UPLINK
+            \begin{lstlisting}
+        $ iptables -P FORWARD DROP
+            \end{lstlisting}
     \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole per il LOG}
+    LOG dei pacchetti entranti
+    \\~\\
+    \begin{lstlisting}
+    $ iptables -N LOGGING
+    
+    
+    $ iptables -A INPUT -j LOGGING
+    
+    
+    $ iptables -A LOGGING -m limit --limit $LOGLIMIT -j LOG --log-prefix 
+            "COMPETITION-LOG: " --log-level 4
+
+    \end{lstlisting}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+    \frametitle{Regole per il LOG}
+    LOG dei pacchetti inoltrati
+    \\~\\
+    \begin{lstlisting}
+    $ iptables -N LOGGING
+
+
+    $ iptables -A LOGGING -m limit --limit $LOGLIMIT -j LOG --log-prefix 
+            "COMPETITION-LOG: " --log-level 4
+    
+    
+    $ iptables -A FORWARD -j LOGGING
+    \end{lstlisting}
 
 \end{frame}
 
@@ -163,48 +434,186 @@
 \subsubsection{Obiettivi}
 \begin{frame}
     \frametitle{Obiettivi Fase 2}
-
+    \begin{itemize}
+        \item<1-> Solo Management e Virtual Router possono iniziare una connessione verso chiunque
+        \item<2-> Solo Management e Virtual Router possono connettersi all'esterno, attraverso l'UPLINK
+        \item<3-> Team possono comunicare tra loro
+        \item<4-> Team non possono iniziare connessioni verso MANAGEMENT e VIRTUAL ROUTER
+        \item<4-> LOG dei pacchetti entranti e dei pacchetti inoltrati
+    \end{itemize}
     
 
 \end{frame}
 \subsubsection{Regole specifiche per il Virtual Router}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per il Virtual Router}
-    \begin{itemize}
-        \item aa
-    \end{itemize}
+    Le regole rimangono le stesse della FASE 1
 \end{frame}
 
 
 \subsubsection{Regole specifiche per il Management}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per il Management}
-    \begin{itemize}
-        \item aa
-    \end{itemize}
+    Connessione all'esterno attraverso UPLINK
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT
+    \end{lstlisting}
+\end{frame}
 
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Connessione al VIRTUAL ROUTER
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P INPUT DROP
+        
+        
+        $ iptables -A INPUT -i $MANAGEMENT_INTERFACE -j ACCEPT
+        
+        
+        $ iptables -P OUTPUT ACCEPT
+
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Connessione ai TEAM
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per il Management}
+    Blocco connessioni dall'esterno e dai TEAM (se non iniziate da MANAGEMENT)
+    \\~\\
+    \begin{lstlisting}[language=sh]
+        $ iptables -P FORWARD ACCEPT 
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+        
+        
+        $ iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP        
+    \end{lstlisting}
 \end{frame}
 
 \subsubsection{Regole specifiche per i Team}
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Regole specifiche per i Team}
-    \begin{itemize}
-        \item aa
-    \end{itemize}
+    Rispondere a connessioni iniziate da MANAGEMENT
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT 
+        
+        
+        $ iptables -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT
+        
+        
+        $ iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP
+    \end{lstlisting}
+
+\end{frame}
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per i Team}
+    Rispondere a connessioni iniziate da VR
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P INPUT DROP
+        
+        
+        $ iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    \end{lstlisting}
 
 \end{frame}
 
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per i Team}
+    Connessioni verso altri TEAM
+    \\~\\
+    \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT
+    \end{lstlisting}
 
-\section{Tools \& Software}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole specifiche per i Team}
+    Blocco inizio connessioni verso:
+    \begin{itemize}
+        \item MANAGEMENT
+            \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT
+
+
+        $ iptables -A FORWARD -o $MANAGEMENT_INTERFACE -j DROP
+            \end{lstlisting}
+        \item VIRTUAL ROUTER
+            \begin{lstlisting}
+        $ iptables -P INPUT DROP  
+            \end{lstlisting}
+        \item esterno tramite UPLINK
+            \begin{lstlisting}
+        $ iptables -P FORWARD ACCEPT
+
+
+        $ iptables -A FORWARD -o $UPLINK -j DROP
+            \end{lstlisting}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole per il LOG}
+    Le regole sono le stesse della FASE 1
+\end{frame}
+
 \begin{frame}
-    \frametitle{Software}
-    \begin{itemize}
-        \item <1-> iptables
-        \item <1-> netplan
-        \item <1-> python
-    \end{itemize}
-     
+    \frametitle{NAT}
+    \onslide<1-> {Il NAT, ovvero \textit{Network Address Translation}, conosciuto anche come \textbf{network masquerading}, è una tecnica
+    che consiste nel modificare gli \textbf{indirizzi IP} contenuti negli \textbf{header} dei pacchetti in transito su
+    un sistema che agisce da \textbf{router} all'interno di una comunicazione tra due o più \textit{host}.}
+    \\~\\
+    \onslide<2-> {Nel nostro caso verrà mascherato l'indirizzo sorgente del pacchetto.}
+
 \end{frame}
+
+\begin{frame}
+    \frametitle{MASQUERADING}
+    Lo script è stato ideato per permettere quattro situazioni di \textit{masquerading}:
+    \begin{itemize}
+        \item <1-> Un indirizzo unico per tutti i TEAM\onslide <2->{, che può essere:}
+        \begin{itemize}
+            \item<2-> definito dall'amministratore di gara
+            \item<3-> generato in modo casuale
+        \end{itemize}
+        \item<4-> Indirizzi diversi per tutti i TEAM\onslide <5->{, che possono essere:}
+        \begin{itemize}
+            \item <5-> definiti dall'amministratore di gara
+            \item <6-> generati in modo casuale
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Regole per il Masquerading}
+
+    La regola per il \textbf{masquerading} è strutturata in questo modo:
+    \\~\\
+    \begin{lstlisting}
+    $ iptables -t nat -A POSTROUTING -o $interface -j SNAT 
+            --to-source $MASQUERADING_ADDRESS
+    \end{lstlisting}
+\end{frame}
+
+
+
+
 
 \section{Test delle prestazioni}
 \begin{frame}

@@ -1,0 +1,8 @@
+\frametitle{Regole per il Masquerading}
+
+    La regola per il \textbf{masquerading} è strutturata in questo modo:
+    \\~\\
+    \begin{lstlisting}
+    $ iptables -t nat -A POSTROUTING -o $interface -j SNAT
+            --to-source $MASQUERADING_ADDRESS
+    \end{lstlisting}
