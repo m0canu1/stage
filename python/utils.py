@@ -254,7 +254,9 @@ def set_teams_addresses(if_list, up_address, mm_address):
     config = load_from_config()
     nteams = config['NumberOfTeams']
 
-
+    if_list = get_interfaces_list_noloopback()
+    if_list.pop(if_list.index(config['ManagementInterface']))
+    if_list.pop(if_list.index(config['UplinkInterface']))
 
     if (up_address):
         up = int(up_address.split('.')[2])
@@ -414,10 +416,11 @@ def check_ip(ip):
     except ValueError:
         return False
 
+
 def fw_rules_interactive(phase):
     config = load_from_config()
-    
-    config ['Masquerading'] = input("""
+
+    config['Masquerading'] = input("""
                 Choose masquerading mode:
 
                 false -> no masquerading
@@ -427,8 +430,8 @@ def fw_rules_interactive(phase):
                 
                 NOTE: There are %d teams!
 
-                """ %(config['NumberOfTeams']))
-    config ['Log'] = input("""
+                """ % (config['NumberOfTeams']))
+    config['Log'] = input("""
                 Chosse masquerading mode:
 
                 false -> no logging
@@ -463,19 +466,20 @@ def fw_rules(phase):
         )
         print(response.stdout)
 
-    except KeyError:
+    except KeyError as identifier:
+        # print(identifier)
         print("ERROR! Check your config.")
     except subprocess.CalledProcessError as identifier:
         print(identifier)
 
 
-
 def disable_interfaces(if_list):
-
-    if(len(if_list) > 0):
-        for interface in if_list:
-            subprocess.run(["ip", "link", "set", "dev", interface, "down"])
-            print("Disabled: " + interface)
+    # TODO non disabilita le interfacce non usate perché if_list è vuoto
+    print(if_list)
+    # if(len(if_list) > 0):
+    for interface in if_list:
+        subprocess.run(["ip", "link", "set", "dev", interface, "down"])
+        print("Disabled: " + interface)
 
 
 def create_netplan_config_interactive(if_list):
@@ -515,7 +519,6 @@ def create_config_file(up_interface, up_address,
 
         set_teams_addresses(teams_interfaces, up_address,
                             management_interface_addr)
-
 
         create_netplan_config(management_interface, management_interface_addr,
                               up_interface, up_address)
