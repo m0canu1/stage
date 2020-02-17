@@ -739,19 +739,19 @@
 \section{Python Script}
 
 \begin{frame}
-    \frametitle{Parametri dello script}
+    \frametitle{Ricordiamo i parametri accettati dallo script}
     \begin{description}
         \item[-I] configura la gara in modo interattivo
-        \item[-G]<2-> mostra la configurazione attuale (del file di config)
-        \item[-L]<3-> mostra tutte le interfacce della macchina
-        \item[-p]<4-> per specificare la fase (1 o 2)
-        \item[-ui]<5-> nome dell'interfaccia di uplink
-        \item[-ua]<6-> indirizzo dell'interfaccia di uplink
-        \item[-mi]<7-> nome dell'interfaccia di Management
-        \item[-ma]<8-> indirizzo dell'interfaccia di Management
-        \item[-masq]<9-> come effettuare il masquerading (false, IP singolo, IP per ogni squadra, true)
-        \item[-t]<10-> le interfacce delle squadre
-        \item[-l]<11-> il limite di logging
+        \item[-G] mostra la configurazione attuale (del file di config)
+        \item[-L] mostra tutte le interfacce della macchina
+        \item[-p] per specificare la fase (1 o 2)
+        \item[-ui] nome dell'interfaccia di uplink
+        \item[-ua] indirizzo dell'interfaccia di uplink
+        \item[-mi] nome dell'interfaccia di Management
+        \item[-ma] indirizzo dell'interfaccia di Management
+        \item[-masq] come effettuare il masquerading (false, IP singolo, IP per ogni squadra, true)
+        \item[-t] le interfacce delle squadre
+        \item[-l] il limite di logging
     \end{description}
 \end{frame}
 
@@ -887,9 +887,9 @@ target     prot opt source               destination
 Chain POSTROUTING (policy ACCEPT)
 target     prot opt source               destination         
 MASQUERADE  all  --  anywhere             anywhere            
-SNAT       all  --  anywhere             anywhere             to:136.133.12.28
-SNAT       all  --  anywhere             anywhere             to:76.138.130.11
-SNAT       all  --  anywhere             anywhere             to:11.49.228.130
+SNAT        all  --  anywhere             anywhere             to:136.133.12.28
+SNAT        all  --  anywhere             anywhere             to:76.138.130.11
+SNAT        all  --  anywhere             anywhere             to:11.49.228.130
     \end{lstlisting}
 \end{frame}
 
@@ -924,7 +924,8 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 \begin{frame}[fragile]
     \frametitle{Esempi}
     \begin{lstlisting}
--p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123
+                                            -t ens38 ens39 -l 4/sec
     \end{lstlisting}
     Avrà i seguenti effetti sulla tabella FILTER:
     \begin{lstlisting}
@@ -957,7 +958,8 @@ LOG        all  --  anywhere             anywhere             limit: avg 4/sec
 \begin{frame}[fragile]
     \frametitle{Esempi}
     \begin{lstlisting}
--p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123
+                                            -t ens38 ens39 -l 4/sec
 
     \end{lstlisting}
     Avrà i seguenti effetti sulla tabella NAT:
@@ -974,15 +976,16 @@ target     prot opt source               destination
 Chain POSTROUTING (policy ACCEPT)
 target     prot opt source               destination         
 MASQUERADE  all  --  anywhere             anywhere            
-SNAT       all  --  anywhere             anywhere             to:123.123.123.123
-SNAT       all  --  anywhere             anywhere             to:123.123.123.123
+SNAT        all  --  anywhere             anywhere             to:123.123.123.123
+SNAT        all  --  anywhere             anywhere             to:123.123.123.123
     \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
     \frametitle{Esempi}
     \begin{lstlisting}
--p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 
+                                            -t ens38 ens39 -l 4/sec
 
             \end{lstlisting}
     Avrà i seguenti effetti sulla configurazione delle interfacce:
@@ -1004,7 +1007,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
     \end{lstlisting}
 \end{frame}
 
-\section{Test delle prestazioni}
+% \section{Test delle prestazioni}
 % \begin{frame}
 %     \frametitle{}
 
