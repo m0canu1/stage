@@ -2,7 +2,6 @@
 \usetheme{Antibes}
 \usepackage{epstopdf}
 \usepackage{tikz}
-\usetikzlibrary{chains}
 \usepackage{listings}
 \usepackage{xcolor}
 
@@ -179,13 +178,11 @@
         \item[RETURN] <6-> ferma la "traversata" dell'attuale catena e ritorna alla catena chiamante (precedente)
         \item[catena definita dall'utente] <7->
     \end{description}
-
 \end{frame}
 
 
 \begin{frame}
     \frametitle{CHAINS}
-
     Le catene predefinite sono:
     \begin{description}
         \item[INPUT]<1-> per i pacchetti destinati ad un processo del server locale
@@ -194,7 +191,6 @@
         \item[POSTROUTING]<4-> per l'alterazione dei pacchetti appena prima dell'uscita
         \item[PREROUTING]<5-> per l'alterazione dei pacchetti appena entrati
     \end{description}
-
 \end{frame}
 
 
@@ -211,8 +207,9 @@
 \end{frame}
 
 \subsection*{netplan}
+
 \begin{frame}
-    \frametitle{Definizione}
+    \frametitle{Netplan}
 
     \onslide<1-> {Netplan è uno strumento per la configurazione del netwoking sui sistemi linux.}
     \\~\\
@@ -242,44 +239,43 @@
 \begin{frame}[fragile]
     \frametitle{Configurazione netplan}
     Con le interfacce definite prima avremo:
-    \begin{column}{0.45\textwidth}
-        \begin{lstlisting}
-network:
-    ethernets:
-        ens33:
-            dhcp4: true
-            dhcp6: false
-        ens37:
-            addresses:
-            - 172.168.2.128/24
-            dhcp4: false
-            dhcp6: false
-        ens38:
-            addresses:
-            - 172.168.3.100/24
-            dhcp4: false
-            dhcp6: false
-        \end{lstlisting}
-    \end{column}
-    \begin{column}{0.45\textwidth}
-        \begin{lstlisting}
-    ens39:
-        addresses:
-        - 172.168.4.100/24
-        dhcp4: false
-        dhcp6: false
-    ens40:
-        addresses:
-        - 172.168.5.100/24
-        dhcp4: false
-        dhcp6: false
-renderer: networkd
-version: 2
-        \end{lstlisting}
-    \end{column}
-    
-
+    \begin{lstlisting}
+    network:
+        ethernets:
+            ens33:
+                dhcp4: true
+                dhcp6: false
+            ens37:
+                addresses:
+                - 172.168.2.128/24
+                dhcp4: false
+                dhcp6: false
+            ens38:
+                addresses:
+                - 172.168.3.100/24
+                dhcp4: false
+                dhcp6: false
+    \end{lstlisting}
 \end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Configurazione netplan}
+    \begin{lstlisting}
+            ens39:
+                addresses:
+                - 172.168.4.100/24
+                dhcp4: false
+                dhcp6: false
+            ens40:
+                addresses:
+                - 172.168.5.100/24
+                dhcp4: false
+                dhcp6: false
+        renderer: networkd
+        version: 2
+    \end{lstlisting}
+\end{frame}
+
 
 \subsection*{script python}
 \begin{frame}
@@ -290,32 +286,29 @@ version: 2
     Per essere eseguito, lo script, ha bisogno di alcuni parametri in input.
     \\~\\
     Esso genera un file di configurazione, in formato JSON, editabile anche manualmente, che viene utilizzato per configurare la competizione.
-    \\~\\
 
 \end{frame}
 
 \begin{frame}[fragile]
     \frametitle{Formato file di configurazione}
     \begin{lstlisting}
-        {
-            "ManagementInterface": "ens37",
-            "ManagementInterfaceAddress": "172.168.2.100",
-            "NumberOfTeams": 3,
-            "Team1Interface": "ens38",
-            "Team1InterfaceAddress": "172.168.3.100",
-            "Team2Interface": "ens39",
-            "Team2InterfaceAddress": "172.168.4.100",
-            "Team3Interface": "ens40",
-            "Team3InterfaceAddress": "172.168.5.100",
-            "UplinkAddress": "172.168.1.128",
-            "UplinkInterface": "ens33",
-            "Log": "3/sec"
-        }
+        "ManagementInterface": "ens37",
+        "ManagementInterfaceAddress": "172.168.2.100",
+        "NumberOfTeams": 3,
+        "Team1Interface": "ens38",
+        "Team1InterfaceAddress": "172.168.3.100",
+        "Team2Interface": "ens39",
+        "Team2InterfaceAddress": "172.168.4.100",
+        "Team3Interface": "ens40",
+        "Team3InterfaceAddress": "172.168.5.100",
+        "UplinkAddress": "172.168.1.128",
+        "UplinkInterface": "ens33",
+        "Log": "3/sec"
     \end{lstlisting}
-
 \end{frame}
 
-\begin{frame}[fragile]
+
+\begin{frame}
     \frametitle{Parametri dello script}
     \begin{description}
         \item[-I] configura la gara in modo interattivo
@@ -330,21 +323,9 @@ version: 2
         \item[-t]<10-> le interfacce delle squadre
         \item[-l]<11-> il limite di logging
     \end{description}
-
-    
-
 \end{frame}
 
-
-
-\subsection*{script bash}
-
-
 \section{Regole Firewall}
-
-
-
-
 \subsection{Fase 1}
 \subsubsection{Obiettivi}
 \begin{frame}
@@ -712,7 +693,7 @@ version: 2
     \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]
+\begin{frame}
     \frametitle{Regole per il LOG}
     Le regole sono le stesse della FASE 1
 \end{frame}
@@ -755,17 +736,281 @@ version: 2
     \end{lstlisting}
 \end{frame}
 
+\section{Python Script}
+
+\begin{frame}
+    \frametitle{Parametri dello script}
+    \begin{description}
+        \item[-I] configura la gara in modo interattivo
+        \item[-G]<2-> mostra la configurazione attuale (del file di config)
+        \item[-L]<3-> mostra tutte le interfacce della macchina
+        \item[-p]<4-> per specificare la fase (1 o 2)
+        \item[-ui]<5-> nome dell'interfaccia di uplink
+        \item[-ua]<6-> indirizzo dell'interfaccia di uplink
+        \item[-mi]<7-> nome dell'interfaccia di Management
+        \item[-ma]<8-> indirizzo dell'interfaccia di Management
+        \item[-masq]<9-> come effettuare il masquerading (false, IP singolo, IP per ogni squadra, true)
+        \item[-t]<10-> le interfacce delle squadre
+        \item[-l]<11-> il limite di logging
+    \end{description}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 1 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella FILTER:
+    \begin{lstlisting}
+Chain INPUT (policy DROP)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  172.168.1.1          anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+ACCEPT     all  --  anywhere             anywhere            
+
+Chain FORWARD (policy DROP)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain LOGGING (2 references)
+target     prot opt source               destination         
+LOG        all  --  anywhere             anywhere             limit: avg 4/sec 
+                            burst 5 LOG level warning prefix "COMPETITION-LOG: "
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 1 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella NAT:
+    \begin{lstlisting}
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+MASQUERADE  all  --  anywhere             anywhere 
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 1 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+            \end{lstlisting}
+    Avrà i seguenti effetti sulla configurazione delle interfacce:
+    \begin{lstlisting}
+ens33: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.1.128  netmask 255.255.255.0  broadcast 172.168.1.255
+
+ens37: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.2.100  netmask 255.255.255.0  broadcast 172.168.2.255
+
+ens38: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.3.100  netmask 255.255.255.0  broadcast 172.168.3.255
+
+ens39: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.4.100  netmask 255.255.255.0  broadcast 172.168.4.255
+
+ens40: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.5.100  netmask 255.255.255.0  broadcast 172.168.5.255
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella FILTER:
+    \begin{lstlisting}
+Chain INPUT (policy DROP)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  172.168.1.1          anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+ACCEPT     all  --  anywhere             anywhere            
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+DROP       all  --  anywhere             anywhere            
+DROP       all  --  anywhere             anywhere            
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain LOGGING (2 references)
+target     prot opt source               destination         
+LOG        all  --  anywhere             anywhere             limit: avg 4/sec 
+                            burst 5 LOG level warning prefix "COMPETITION-LOG: "
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella NAT:
+    \begin{lstlisting}
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+MASQUERADE  all  --  anywhere             anywhere            
+SNAT       all  --  anywhere             anywhere             to:136.133.12.28
+SNAT       all  --  anywhere             anywhere             to:76.138.130.11
+SNAT       all  --  anywhere             anywhere             to:11.49.228.130
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 1 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq true -t ens38 ens39 ens40 -l 4/sec
+            \end{lstlisting}
+    Avrà i seguenti effetti sulla configurazione delle interfacce:
+    \begin{lstlisting}
+ens33: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.1.128  netmask 255.255.255.0  broadcast 172.168.1.255
+
+ens37: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.2.100  netmask 255.255.255.0  broadcast 172.168.2.255
+
+ens38: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.3.100  netmask 255.255.255.0  broadcast 172.168.3.255
+
+ens39: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.4.100  netmask 255.255.255.0  broadcast 172.168.4.255
+
+ens40: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.5.100  netmask 255.255.255.0  broadcast 172.168.5.255
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+    \end{lstlisting}
+\end{frame}
 
 
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella FILTER:
+    \begin{lstlisting}
+Chain INPUT (policy DROP)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  172.168.1.1          anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+ACCEPT     all  --  anywhere             anywhere            
 
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+LOGGING    all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere             ctstate ESTABLISHED
+DROP       all  --  anywhere             anywhere            
+DROP       all  --  anywhere             anywhere            
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain LOGGING (2 references)
+target     prot opt source               destination         
+LOG        all  --  anywhere             anywhere             limit: avg 4/sec 
+                            burst 5 LOG level warning prefix "COMPETITION-LOG: "
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+
+    \end{lstlisting}
+    Avrà i seguenti effetti sulla tabella NAT:
+    \begin{lstlisting}
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+MASQUERADE  all  --  anywhere             anywhere            
+SNAT       all  --  anywhere             anywhere             to:123.123.123.123
+SNAT       all  --  anywhere             anywhere             to:123.123.123.123
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempi}
+    \begin{lstlisting}
+-p 2 -ui ens33 -mi ens37 -ma 172.168.2.100 -masq 123.123.123.123 -t ens38 ens39 -l 4/sec
+
+            \end{lstlisting}
+    Avrà i seguenti effetti sulla configurazione delle interfacce:
+    \begin{lstlisting}
+ens33: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.1.128  netmask 255.255.255.0  broadcast 172.168.1.255
+
+ens37: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.2.100  netmask 255.255.255.0  broadcast 172.168.2.255
+
+ens38: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.3.100  netmask 255.255.255.0  broadcast 172.168.3.255
+
+ens39: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.168.4.100  netmask 255.255.255.0  broadcast 172.168.4.255
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+    \end{lstlisting}
+\end{frame}
 
 \section{Test delle prestazioni}
-\begin{frame}
-    \frametitle{}
+% \begin{frame}
+%     \frametitle{}
 
     
 
-\end{frame}
+% \end{frame}
 
 
 \end{document}
