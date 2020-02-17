@@ -112,8 +112,6 @@ parser.add_argument('-t', '--teams',
 parser.add_argument('-l', '--loglimit',
                     help='log limit. If false logging disabled')
 
-parser.add_argument('-s', '--set',
-                    help='configure competition directly from command line', nargs='?')
 args = parser.parse_args()
 
 

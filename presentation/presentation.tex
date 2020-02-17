@@ -4,10 +4,25 @@
 \usepackage{tikz}
 \usetikzlibrary{chains}
 \usepackage{listings}
+\usepackage{xcolor}
 
-\lstdefinestyle{mystyle}{                  
+% \definecolor{codegreen}{rgb}{0,0.6,0}
+% \definecolor{codegray}{rgb}{0.5,0.5,0.5}
+% \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+
+\lstdefinestyle{bash}{    
     basicstyle=\tiny
 }
+
+\lstdefinestyle{code}{
+    % backgroundcolor=\color{SpringGreen},
+    % escapeinside={\%*}{*)},
+    basicstyle=\tiny
+}
+
+
+
 \title[Cyber Range]{Design and Developement of a Cyber Range}
 % \subtitle{Using Beamer}
 \author[A. Mocanu]{Alexandru Mocanu}
@@ -15,6 +30,7 @@
 \date{\today}
 
 \begin{document}
+\lstset{style=code}
 
 
 \begin{frame}
@@ -144,7 +160,7 @@
     \\~\\
     È strutturato in \textbf{tabelle}, ognuna contiene le proprie \textbf{catene} che possono, anche, essere definite dall'utente.
     \\~\\
-    Ogni catena è una \textit{lista di regole} che specificano l'\textbf{azione} da intraprendere con i pacchetti che corrispondono alla regole.
+    Ogni catena è una \textit{lista di regole} che specificano l'\textbf{azione} da intraprendere con i pacchetti che corrispondono alla regola.
     \\~\\
     Quest'\textit{azione} corrisponde al \textbf{target}.
 
@@ -155,14 +171,14 @@
 
     Una regola di firewall specifica il criterio di selezione dei pacchetti ed il \textbf{target}.
     \\~\\
-    Se il pacchetto non corrisponde $\rightarrow$ verrà esaminata la regola successiva.\\
-    Se il pacchetto corrisponde $\rightarrow$ verrà intrapresa l'azione definita dal \textit{target}, che può essere:
-    \begin{itemize}
-        \item ACCEPT
-        \item DROP
-        \item RETURN
-        \item catena definita dall'utente
-    \end{itemize}
+    \onslide<2-> {Se il pacchetto \textbf{non corrisponde} $\rightarrow$ verrà esaminata la \textbf{regola successiva}.}\\
+    \onslide<3-> {Se il pacchetto \textbf{corrisponde} $\rightarrow$ verrà intrapresa l'azione definita dal \textit{target}}\onslide<4->{, che può essere:}
+    \begin{description}
+        \item[ACCEPT] <4-> lascia transitare il pacchetto
+        \item[DROP] <5-> scarta il pacchetto
+        \item[RETURN] <6-> ferma la "traversata" dell'attuale catena e ritorna alla catena chiamante (precedente)
+        \item[catena definita dall'utente] <7->
+    \end{description}
 
 \end{frame}
 
@@ -170,27 +186,155 @@
 \begin{frame}
     \frametitle{CHAINS}
 
-    
+    Le catene predefinite sono:
+    \begin{description}
+        \item[INPUT]<1-> per i pacchetti destinati ad un processo del server locale
+        \item[OUTPUT]<2-> per i pacchetti creati dal server locale
+        \item[FORWARD]<3-> per i pacchetti inoltrati tramite il server locale
+        \item[POSTROUTING]<4-> per l'alterazione dei pacchetti appena prima dell'uscita
+        \item[PREROUTING]<5-> per l'alterazione dei pacchetti appena entrati
+    \end{description}
 
 \end{frame}
 
 
 \begin{frame}
     \frametitle{TABLES}
-    Ci sono 5 tabelle indipendenti:
+    Ogni tabella ha le proprie catene:
     \begin{description}
-        \item[filter]<1-> defr
-        \item[nat]<2->
-        \item[mangle]<3->
-        \item[raw]<4->
-        \item[security]<5->    
+        \item[filter]<1-> INPUT, FORWARD, OUTPUT.
+        \item[nat]<2-> PREROUTING, INPUT, OUTPUT, POSTROUTING.
+        \item[mangle]<3-> PREROUTING, INPUT, OUTPUT, POSTROUTING, FORWARD.
+        \item[raw]<4-> PREROUTING, OUTPUT
+        \item[security]<5-> INPUT, OUTPUT, FORWARD.
     \end{description}
 \end{frame}
 
 \subsection*{netplan}
+\begin{frame}
+    \frametitle{Definizione}
 
+    \onslide<1-> {Netplan è uno strumento per la configurazione del netwoking sui sistemi linux.}
+    \\~\\
+    \onslide<2-> {Sfrutta un file di configurazione in formato YAML (Yet Another Markup Language)} \onslide<3->{con:}
+    \begin{itemize}
+        \item <3-> le interfacce da utlizzare
+        \item <4-> i parametri di configurazione per ogni interfaccia
+        \item <5-> il \textbf{renderer} da utilizzare.
+    \end{itemize}
+    % \\~\\
+    \onslide<6-> {Da questo file, Netplan, genera la configurazione finale per il \textit{renderer} scelto.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Configurazione netplan}
+    Supponiamo di avere tre TEAM e le seguenti interfacce:
+    \begin{description}
+        \item [ens33] interfaccia di UPLINK
+        \item [ens37]<2-> interfaccia per il subnet di MANAGEMENT
+        \item [ens38]<3-> interfaccia per il subnet del TEAM 1 
+        \item [ens39]<4-> interfaccia per il subnet del TEAM 2
+        \item [ens40]<5-> interfaccia per il subnet del TEAM 3
+    \end{description}
+    % Inoltre, supponiamo di volere un indirizzo IP
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Configurazione netplan}
+    Con le interfacce definite prima avremo:
+    \begin{column}{0.45\textwidth}
+        \begin{lstlisting}
+network:
+    ethernets:
+        ens33:
+            dhcp4: true
+            dhcp6: false
+        ens37:
+            addresses:
+            - 172.168.2.128/24
+            dhcp4: false
+            dhcp6: false
+        ens38:
+            addresses:
+            - 172.168.3.100/24
+            dhcp4: false
+            dhcp6: false
+        \end{lstlisting}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+        \begin{lstlisting}
+    ens39:
+        addresses:
+        - 172.168.4.100/24
+        dhcp4: false
+        dhcp6: false
+    ens40:
+        addresses:
+        - 172.168.5.100/24
+        dhcp4: false
+        dhcp6: false
+renderer: networkd
+version: 2
+        \end{lstlisting}
+    \end{column}
+    
+
+\end{frame}
 
 \subsection*{script python}
+\begin{frame}
+    \frametitle{Script realizzato in python}
+
+    Lo script esegue tutto il lavoro di configurazione, sia per netplan sia per le regole di firewall (quindi iptables).
+    \\~\\
+    Per essere eseguito, lo script, ha bisogno di alcuni parametri in input.
+    \\~\\
+    Esso genera un file di configurazione, in formato JSON, editabile anche manualmente, che viene utilizzato per configurare la competizione.
+    \\~\\
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Formato file di configurazione}
+    \begin{lstlisting}
+        {
+            "ManagementInterface": "ens37",
+            "ManagementInterfaceAddress": "172.168.2.100",
+            "NumberOfTeams": 3,
+            "Team1Interface": "ens38",
+            "Team1InterfaceAddress": "172.168.3.100",
+            "Team2Interface": "ens39",
+            "Team2InterfaceAddress": "172.168.4.100",
+            "Team3Interface": "ens40",
+            "Team3InterfaceAddress": "172.168.5.100",
+            "UplinkAddress": "172.168.1.128",
+            "UplinkInterface": "ens33",
+            "Log": "3/sec"
+        }
+    \end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Parametri dello script}
+    \begin{description}
+        \item[-I] configura la gara in modo interattivo
+        \item[-G]<2-> mostra la configurazione attuale (del file di config)
+        \item[-L]<3-> mostra tutte le interfacce della macchina
+        \item[-p]<4-> per specificare la fase (1 o 2)
+        \item[-ui]<5-> nome dell'interfaccia di uplink
+        \item[-ua]<6-> indirizzo dell'interfaccia di uplink
+        \item[-mi]<7-> nome dell'interfaccia di Management
+        \item[-ma]<8-> indirizzo dell'interfaccia di Management
+        \item[-masq]<9-> come effettuare il masquerading (false, IP singolo, IP per ogni squadra, true)
+        \item[-t]<10-> le interfacce delle squadre
+        \item[-l]<11-> il limite di logging
+    \end{description}
+
+    
+
+\end{frame}
+
 
 
 \subsection*{script bash}
@@ -214,7 +358,7 @@
 
 \end{frame}
 
-\lstset{style=mystyle}
+\lstset{style=bash}
 \subsubsection{Regole specifiche per il Virtual Router}
 \begin{frame}[fragile]
     \frametitle{Regole specifiche per il Virtual Router}
