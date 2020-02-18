@@ -112,8 +112,9 @@ parser.add_argument('-t', '--teams',
 parser.add_argument('-l', '--loglimit',
                     help='log limit. If false logging disabled')
 
-parser.add_argument('-s', '--set',
-                    help='configure competition directly from command line', nargs='?')
+parser.add_argument('-sc', '--set_from_config',
+                    help='sets the competition from the config file', action='store_true')
+
 args = parser.parse_args()
 
 
@@ -124,6 +125,15 @@ if(args.interactive):
     first_menu()
 elif (args.get):
     print_config()
+elif (args.set_from_config):
+    if(args.phase):
+        create_netplan_config()
+        if (args.phase == "1"):
+            fw_rules(1)
+        if (args.phase == "2"):
+            fw_rules(2)
+    else:
+        print("Please, specify the phase.")
 elif (args.listinterfaces):
     print('\n' + ', '.join(if_list).center(100)+'\n')
 else:
@@ -132,9 +142,6 @@ else:
         try:
             if_list.pop(if_list.index(args.uplink_interface))
             if_list.pop(if_list.index(args.management_interface))
-
-            # for interface in args.teams:
-            #     if_list.pop(if_list.index(interface))
 
             create_config_file(args.uplink_interface,
                                args.uplink_address, args.management_interface, args.masquerading, args.management_interface_address, args.teams, args.loglimit)

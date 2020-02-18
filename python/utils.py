@@ -20,10 +20,10 @@ netplan_config['network']['ethernets'] = {}
 
 
 def yes_or_no():
-    query = input('Vuoi modificare? [y/n]: ')
+    query = input('Do you want to edit? [y/n]: ')
     while (query not in ['y', 'n', 'Y', 'N'] or query == ''):
         print('Please answer with yes or no!'.center(50))
-        query = input('Vuoi modificare? [y/n]: ')
+        query = input('Do you want to edit? [y/n]: ')
     Fl = query[0].lower()
     if Fl == 'y':
         return True
@@ -149,9 +149,9 @@ def print_config():
                       (i, interface, address))
             print('\n')
     except FileNotFoundError:
-        print('Nessun file di configurazione trovato.')
+        print('No configurazione file found.')
     except (json.decoder.JSONDecodeError, KeyError):
-        print('Il file di configurazione è vuoto o corrotto.')
+        print('Configuration file is empty or corrupted.')
 
 
 def set_address_support(machine, config):
@@ -168,7 +168,7 @@ def set_address_support(machine, config):
                 config["UplinkAddress"] = address
                 flag = True
             else:
-                print('ERRORE, non è un indirizzo valido.')
+                print("ERROR, it's not a valid IP address.")
 
     else:
         flag = False
@@ -178,7 +178,7 @@ def set_address_support(machine, config):
                 config["ManagementInterfaceAddress"] = address
                 flag = True
             else:
-                print('ERRORE, non è un indirizzo valido.')
+                print("ERROR, it's not a valid IP address.")
 
     save_to_config(config)
 
@@ -200,7 +200,7 @@ def set_address(machine):
 
     if (machine == 0):
         if("UplinkAddress" in config and check_ip(config['UplinkAddress'])):
-            print("L'indirizzo corrente di UPLINK è: %s" %
+            print("Current UPLINK address: %s" %
                   (config["UplinkAddress"]))
             if yes_or_no():
                 return set_address_support(0, config)
@@ -211,7 +211,7 @@ def set_address(machine):
 
     else:
         if("ManagementInterfaceAddress" in config and check_ip(config['UplinkAddress'])):
-            print("L'indirizzo corrente dell'interfaccia di Management è: %s" %
+            print("Current Management Interface address: %s" %
                   (config["ManagementInterfaceAddress"]))
             if yes_or_no():
                 return set_address_support(1, config)
@@ -261,7 +261,7 @@ def set_teams_addresses(if_list, up_address, mm_address):
     if (up_address):
         up = int(up_address.split('.')[2])
     else:
-        print("Waiting 2 sec. for uplink to get the ip.")
+        print("Waiting 2 sec. for uplink to get the IP address.")
         time.sleep(2)
         up = ni.ifaddresses(config['UplinkInterface'])[
             ni.AF_INET][0]['addr']
@@ -303,18 +303,18 @@ def choose_interface_support(machine, if_list, config):
     # interface = ''
 
     if (machine == 0):
-        interface = input("Interfaccia di UPLINK: ")
+        interface = input("UPLINK Interface: ")
         while (interface not in if_list):
-            print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
+            print('\nERROR, not a valid interface. Choose from those:\n')
             print(', '.join(if_list).center(100)+'\n')
-            interface = input("Interfaccia di UPLINK: ")
+            interface = input("UPLINK Interface: ")
         config['UplinkInterface'] = interface
     else:
         interface = input('Interfaccia per il MANAGEMENT: ')
         while (interface not in if_list):
-            print('\nERRORE, interfaccia non presente. Scegli tra le seguenti:\n')
+            print('\nERROR, not a valid interface. Choose from those:\n')
             print(', '.join(if_list).center(100)+'\n')
-            interface = input('Interfaccia per il MANAGEMENT: ')
+            interface = input('MANAGEMENT Interface: ')
         config['ManagementInterface'] = interface
 
     save_to_config(config)
@@ -343,7 +343,7 @@ def choose_interface(machine, if_list):
 
     if (machine == 0):
         if (config and str in config):  # se dic vuoto ritorna false
-            print("L'interfaccia corrente di UPLINK è: %s" %
+            print("Current UPLINK Interface: %s" %
                   (config[str]))
             if yes_or_no():
                 return choose_interface_support(0, if_list, config)
@@ -353,7 +353,7 @@ def choose_interface(machine, if_list):
             return choose_interface_support(0, if_list, config)
     else:
         if (config and str in config):  # se dic vuoto ritorna false
-            print("L'interfaccia corrente del MANAGEMENT è: %s" %
+            print("Current MANAGEMENT Interface: %s" %
                   (config[str]))
             if yes_or_no():
                 return choose_interface_support(1, if_list, config)
@@ -363,28 +363,28 @@ def choose_interface(machine, if_list):
             return choose_interface_support(1, if_list, config)
 
 
-def set_teams_number_support(maxteams, config):
+def set_teams_number_interactive_support(maxteams, config):
     """
-    Metodo di supporto per set_Teams_number()
+    Metodo di supporto per set_teams_number_interactive()
     """
 
     nteams = -1
     while (nteams < 0 or nteams > maxteams):
         try:
-            nteams = int(input('Numero di squadre (max %d): ' % (maxteams)))
+            nteams = int(input('Number of TEAMS (max %d): ' % (maxteams)))
             if (nteams > maxteams):
-                print('ERRORE, numero di squadre troppo alto. Riprova!')
+                print('ERROR, the number is too high. Retry!')
             elif (nteams < 0):
-                print('ERRORE, numero di squadre troppo basso. Riprova!')
+                print('ERROR, the number is too low. Retry!')
         except ValueError:
-            print("Input errato")
+            print("Erroneous input.")
 
     config['NumberOfTeams'] = nteams
 
     save_to_config(config)
 
 
-def set_teams_number(maxteams):
+def set_teams_number_interactive(maxteams):
     """
     Permette la scelta del numero di squadre
 
@@ -397,12 +397,12 @@ def set_teams_number(maxteams):
     config = load_from_config()
 
     if("NumberOfTeams" in config):
-        print("L'attuale numero di squadre è: %s" %
+        print("Current number of TEAMS: %s" %
               (config["NumberOfTeams"]))
         if yes_or_no():
-            set_teams_number_support(maxteams, config)
+            set_teams_number_interactive_support(maxteams, config)
     else:
-        set_teams_number_support(maxteams, config)
+        set_teams_number_interactive_support(maxteams, config)
 
 
 def check_ip(ip):
@@ -485,18 +485,12 @@ def disable_interfaces(if_list):
 def create_netplan_config_interactive(if_list):
     config = load_from_config()
 
-    management_interface = config['ManagementInterface']
     management_interface_addr = config['ManagementInterfaceAddress']
-    up_interface = config['UplinkInterface']
     up_address = config['UplinkAddress']
-    nteams = config['NumberOfTeams']
 
     set_teams_addresses(if_list, up_address, management_interface_addr)
 
-    create_netplan_config(
-        management_interface, management_interface_addr, up_interface, up_address)
-
-    subprocess.run(["sudo", "netplan", "apply"])
+    create_netplan_config()
 
 
 def create_config_file(up_interface, up_address,
@@ -515,15 +509,14 @@ def create_config_file(up_interface, up_address,
         config['Log'] = log
 
         save_to_config(config)
-        reset_netplan(up_interface)
+
+        # TODO forse inutile il reset
+        # reset_netplan(up_interface)
 
         set_teams_addresses(teams_interfaces, up_address,
                             management_interface_addr)
 
-        create_netplan_config(management_interface, management_interface_addr,
-                              up_interface, up_address)
-
-        subprocess.run(["sudo", "netplan", "apply"])
+        create_netplan_config()
 
     except ValueError as identifier:
         print(identifier)
@@ -538,20 +531,24 @@ def reset_netplan(up_interface):
     subprocess.run(["sudo", "netplan", "apply"])
 
 
-def create_netplan_config(management_interface, management_interface_addr, up_interface, up_address):
+def create_netplan_config():
     """
-    Crea il file *.yaml per Netplan
+    Creates *.yaml file for Netplan and applies Netplan config.
     """
 
     config = load_from_config()
 
-    management_interface_addr = management_interface_addr + '/24'
+    m_interface = config['ManagementInterface']
+    m_interface_addr = config['ManagementInterfaceAddress'] + '/24'
 
-    netplan_config['network']['ethernets'][management_interface] = {}
-    netplan_config['network']['ethernets'][management_interface]['dhcp4'] = False
-    netplan_config['network']['ethernets'][management_interface]['dhcp6'] = False
-    netplan_config['network']['ethernets'][management_interface]['addresses'] = [
-        management_interface_addr]
+    up_interface = config['UplinkInterface']
+    up_address = config['UplinkAddress']
+
+    netplan_config['network']['ethernets'][m_interface] = {}
+    netplan_config['network']['ethernets'][m_interface]['dhcp4'] = False
+    netplan_config['network']['ethernets'][m_interface]['dhcp6'] = False
+    netplan_config['network']['ethernets'][m_interface]['addresses'] = [
+        m_interface_addr]
 
     netplan_config['network']['ethernets'][up_interface] = {}
     # Se non è stato assegnao un indirizzo all'uplink, allora si usa il DHCP per prenderlo
@@ -578,3 +575,5 @@ def create_netplan_config(management_interface, management_interface_addr, up_in
             address]
 
     save_to_netplanconfig(netplan_config)
+
+    subprocess.run(["sudo", "netplan", "apply"])
