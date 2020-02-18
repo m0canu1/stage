@@ -3,7 +3,7 @@ import sys
 import subprocess
 import argparse
 
-from utils import fw_rules_interactive, create_netplan_config_interactive, fw_rules, create_netplan_config, create_config_file, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number, set_teams_addresses, set_address
+from utils import fw_rules_interactive, create_netplan_config_interactive, fw_rules, create_netplan_config, create_config_file, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number_interactive, set_teams_addresses, set_address
 
 vr = ''
 mngmt = ''

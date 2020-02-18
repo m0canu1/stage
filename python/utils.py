@@ -432,7 +432,7 @@ def fw_rules_interactive(phase):
 
                 """ % (config['NumberOfTeams']))
     config['Log'] = input("""
-                Chosse masquerading mode:
+                Chosse logging mode:
 
                 false -> no logging
                 value -> set a limit (eg. 3/sec, 3/min). If you omit the time measure, the default wil be in seconds.
@@ -474,12 +474,10 @@ def fw_rules(phase):
 
 
 def disable_interfaces(if_list):
-    # TODO non disabilita le interfacce non usate perché if_list è vuoto
-    print(if_list)
-    # if(len(if_list) > 0):
+    print("\nDisabling unused interfaces...\n")
     for interface in if_list:
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
-        print("Disabled: " + interface)
+        print(interface + " disabled.")
 
 
 def create_netplan_config_interactive(if_list):
