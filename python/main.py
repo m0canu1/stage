@@ -19,7 +19,7 @@ def change_config():
     if_list.pop(if_list.index(mngmt))
 
     # Scelta del numero di squadre
-    set_teams_number_interactive(len(if_list))
+    set_teams_number(len(if_list))
 
     # Indirizzo del Virtual Router
     vr = set_address(0)
@@ -109,8 +109,8 @@ parser.add_argument('-masq', '--masquerading',
 parser.add_argument('-t', '--teams',
                     help='teams\' interfaces', nargs='+')
 
-parser.add_argument('-l', '--loglimit',
-                    help='log limit. If false logging disabled')
+parser.add_argument('-l', '--log',
+                    help='true to log, value to limit the log. If false logging disabled')
 
 parser.add_argument('-sc', '--set_from_config',
                     help='sets the competition from the config file', action='store_true')
@@ -138,13 +138,13 @@ elif (args.listinterfaces):
     print('\n' + ', '.join(if_list).center(100)+'\n')
 else:
     if(args.phase and args.uplink_interface and
-            args.management_interface and args.management_interface_address and args.masquerading and args.teams and args.loglimit):
+            args.management_interface and args.management_interface_address and args.masquerading and args.teams and args.log):
         try:
             if_list.pop(if_list.index(args.uplink_interface))
             if_list.pop(if_list.index(args.management_interface))
 
             create_config_file(args.uplink_interface,
-                               args.uplink_address, args.management_interface, args.masquerading, args.management_interface_address, args.teams, args.loglimit)
+                               args.uplink_address, args.management_interface, args.masquerading, args.management_interface_address, args.teams, args.log)
 
             if (args.phase == "1"):
                 fw_rules(1)

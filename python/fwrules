@@ -7,7 +7,7 @@
 # -m = management interface
 # -r = masquerading mode [true for random addresses, false for no masquerading, set single or multiple (around "") IPs (for each team, in order)]
 # -t = team n interface (around quotes "")
-# -l = loglimit (set a limit to enable. No flag if you don't want to log at all)
+# -l = log (true or value (log limit) to enable. false if you don't want to log at all)
 
 while getopts p:l:u:m:r:t: option
 do
@@ -18,7 +18,7 @@ u) UPLINK=${OPTARG};;
 m) MANAGEMENT_INTERFACE=${OPTARG};;
 r) MASQUERADING=(${OPTARG});; # LE PARENTESI SERVONO A TRASFORMARE LA STRINGA IN ARRAY
 t) TEAMS=(${OPTARG});; #lista delle interfacce, in ordine
-l) LOGLIMIT=${OPTARG};;
+l) LOG=${OPTARG};;
 esac
 done
 
@@ -30,7 +30,7 @@ sudo iptables -P FORWARD ACCEPT
 sudo iptables -P INPUT ACCEPT
 sudo iptables -P OUTPUT ACCEPT
 sudo iptables -t nat -F
-sudo iptables -X LOGGING # elimina chain di LOGGING se esistente
+sudo iptables -X # elimina ogni chain creata dall'utente
 
 
 
@@ -38,15 +38,24 @@ sudo iptables -X LOGGING # elimina chain di LOGGING se esistente
 sudo iptables -t nat -A POSTROUTING -o $UPLINK -j MASQUERADE
 
 
-
-if [ $LOGLIMIT != false ]
+if [ $LOG == true ]
 then
-    # Log di tutti i pacchetti entranti e forwardati
-    sudo iptables -N LOGGING # crea nuova chain
-    sudo iptables -A INPUT -j LOGGING # manda tutti i pacchetti entranti alla chain LOGGING
-    sudo iptables -A LOGGING -m limit --limit $LOGLIMIT -j LOG --log-prefix "COMPETITION-LOG: " --log-level 4
-    # sudo iptables -A LOGGING -j DROP # i pacchetti arrivati in LOGGING saranno droppati
-    sudo iptables -A FORWARD -j LOGGING 
+    sudo iptables -N INLOGGING # crea nuova chain per il log dei pacchetti in INPUT
+    sudo iptables -A INLOGGING -j LOG --log-prefix "INPUT-LOG: " --log-level 4
+    sudo iptables -A INPUT -j INLOGGING # manda tutti i pacchetti entranti alla chain INLOGGING
+
+    sudo iptables -N FWLOGGING # crea nuova chain per il log dei pacchetti inoltrati
+    sudo iptables -A FWLOGGING -j LOG --log-prefix "FORWARD-LOG: " --log-level 4 # senza un limite
+    sudo iptables -A FORWARD -j FWLOGGING 
+elif [ $LOG != false ]
+then
+    sudo iptables -N INLOGGING # crea nuova chain per il log dei pacchetti in INPUT
+    sudo iptables -A INLOGGING -m limit --limit $LOG -j LOG --log-prefix "INPUT-LOG: " --log-level 4
+    sudo iptables -A INPUT -j INLOGGING # manda tutti i pacchetti entranti alla chain INLOGGING
+
+    sudo iptables -N FWLOGGING 
+    sudo iptables -A FWLOGGING -m limit --limit $LOG -j LOG --log-prefix "FORWARD-LOG: " --log-level 4
+    sudo iptables -A FORWARD -j FWLOGGING 
 fi
 
 

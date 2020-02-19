@@ -33,12 +33,13 @@ def yes_or_no():
 
 def load_from_config():
     """
-    Tries to load the configuration from the .config file
+    Carica la configurazione dal file .config
 
     Returns
     -------
     config: dic
-        the configuration or an empty dic if no config was found (or file not present)
+        la configurazione presente nel file .config oppure un dic vuoto
+        se non è stata trovata alcuna configurazione (o file non presente).
     """
     try:
         with open(configfile) as f:
@@ -55,7 +56,7 @@ def load_from_config():
 
 def save_to_config(config):
     """
-    Saves the given dic in the .config file
+    Salva la configurazione nel file .config 
     """
     with open(configfile, 'w') as f:
         f.write(json.dumps(config, indent=4, sort_keys=True))
@@ -64,15 +65,15 @@ def save_to_config(config):
 
 def load_from_netplanconfig():
     """
-    Loads the configuration from the .yaml file used by Netplan
+    Carica la configurazione dal file *.yaml usato da Netplan
 
     Returns
     -------
     False
-        if no file found or it's corrupted.
+        se non è stato trovato alcun file *.yaml oppure se è corrotto (manomesso)
 
     config: dic
-        containig the configuration.
+        l'attuale configurazione contenuta nel file *.yaml di Netplan
     """
     try:
         with open(netplanfile) as f:
@@ -90,12 +91,12 @@ def load_from_netplanconfig():
 
 def save_to_netplanconfig(config):
     """
-    Saves the given dic (config) into the .yaml file used by Netplan
+    Salva la configurazione nel file *.yaml usato da Netplan
 
     Parameters
     ----------
     config : dic
-        the configuration (yaml formal) to be saved in the .yaml file.
+        La configurazione (formato yaml) che verrà salvata su file.
     """
     with open(netplanfile, 'w') as f:
         yaml.safe_dump(config, f)
@@ -103,8 +104,14 @@ def save_to_netplanconfig(config):
 
 def print_config():
     """
-    Prints the configuration from the .config file
+    Legge la configurazione dal file .config
 
+
+    FileNotFoundError
+        Se non è stato trovato nessun file di configurazione.
+
+    json.decoder.JSONDecodeError, KeyError
+        Se il file di configurazione è vuoto oppure corrotto.
     """
     try:
         with open(configfile) as f:
@@ -142,12 +149,16 @@ def print_config():
                       (i, interface, address))
             print('\n')
     except FileNotFoundError:
-        print('No configueration file found.')
+        print('No configurazione file found.')
     except (json.decoder.JSONDecodeError, KeyError):
         print('Configuration file is empty or corrupted.')
 
 
 def set_address_support(machine, config):
+    """
+    Metodo di supporto per set_address()
+    """
+
     if (machine == 0):
         flag = False
         while not flag:
@@ -176,13 +187,13 @@ def set_address_support(machine, config):
 
 def set_address(machine):
     """
-    Sets the interface's address.
+    Imposta l'indirizzo dell'interfaccia per la macchina.
 
     Parameters
     ----------
     machine: int
-        0 : address of UPLINK interface
-        1 : address of MANAGEMENT interface
+        0 : per l'interfaccia di UPLINK
+        1 : per l'interfaccia usata dal Management
     """
 
     config = load_from_config()
@@ -212,12 +223,12 @@ def set_address(machine):
 
 def get_interfaces_list_noloopback():
     """
-    Gets all the interfaces available, excluding 'loopback'
+    Restituisce tutte le interfacce del sistema, escludendo il 'loopback'
 
     Returns
     -------
     if_list : list
-        containing all the available interfaces
+        con le interfacce disponibili per la gara
     """
 
     if_list = ni.interfaces()
@@ -225,10 +236,71 @@ def get_interfaces_list_noloopback():
 
     return if_list
 
-def choose_interface_support(machine, if_list, config):
 
-    print('Choose from the following:\n')
+def set_teams_addresses(if_list, up_address, mm_address):
+    """
+    Imposta gli indirizzi delle interfacce rimanenti
+
+    Parameters
+    ----------
+    if_list : list 
+        Lista delle interfacce rimanenti.
+    up_address : str
+        Indirizzo di Uplink
+    mm_address : str 
+        Indirizzo dell'interfaccia per la Macchina di Management
+    """
+
+    config = load_from_config()
+    nteams = config['NumberOfTeams']
+
+    if_list = get_interfaces_list_noloopback()
+    if_list.pop(if_list.index(config['ManagementInterface']))
+    if_list.pop(if_list.index(config['UplinkInterface']))
+
+    if (up_address):
+        up = int(up_address.split('.')[2])
+    else:
+        print("Waiting 2 sec. for uplink to get the IP address.")
+        time.sleep(2)
+        up = ni.ifaddresses(config['UplinkInterface'])[
+            ni.AF_INET][0]['addr']
+        up = int(up.split('.')[2])
+
+    mm = int(mm_address.split('.')[2])
+
+    ip = 1  # base of the second-last 8 bit of the IP
+    # Assegna tutte le interfacce rimanenti
+
+    for i in range(1, nteams+1):
+        config["Team%dInterface" %
+               (i)] = if_list[0]  # assegno l'interfaccia
+        # print(if_list)
+        if_list.pop(0)  # rimuove l'interfaccia appena assegnata
+        flag = False
+        while not flag:
+            if (ip not in (up, mm)):
+                config["Team%dInterfaceAddress" %
+                       (i)] = '172.168.%d.100' % (ip)
+                flag = True
+            ip += 1
+
+    # print(if_list)
+
+    disable_interfaces(if_list)
+
+    save_to_config(config)
+
+
+def choose_interface_support(machine, if_list, config):
+    """
+    Metodo di supporto per choose_interface()
+    """
+
+    print('Scegli tra le seguenti:\n')
     print(', '.join(if_list).center(100)+'\n')
+
+    # interface = ''
 
     if (machine == 0):
         interface = input("UPLINK Interface: ")
@@ -251,16 +323,16 @@ def choose_interface_support(machine, if_list, config):
 
 def choose_interface(machine, if_list):
     """
-    Allows to choose an interface from the given list.
+    Permette la scelta delle interfacce da una lista.
 
     Parameters
     ----------
     machine : int
-        0 : for the UPLINK interface
-        1 : for the MANAGEMENT interface
+        0 : se per l'interfaccia di uplink
+        1 : se per l'interfaccia usata dal management
 
     if_list : list
-        a list with the available interfaces
+        la lista con le interfacce disponibili per la scelta.
     """
     config = load_from_config()
 
@@ -292,6 +364,10 @@ def choose_interface(machine, if_list):
 
 
 def set_teams_number_interactive_support(maxteams, config):
+    """
+    Metodo di supporto per set_teams_number_interactive()
+    """
+
     nteams = -1
     while (nteams < 0 or nteams > maxteams):
         try:
@@ -310,12 +386,12 @@ def set_teams_number_interactive_support(maxteams, config):
 
 def set_teams_number_interactive(maxteams):
     """
-    Allows to choose the number of teams.
+    Permette la scelta del numero di squadre
 
     Parameters
     ----------
     maxteams : int
-        max number of teams.
+        Numero massimo di squadre
     """
 
     config = load_from_config()
@@ -331,7 +407,7 @@ def set_teams_number_interactive(maxteams):
 
 def check_ip(ip):
     """
-    Checks if the address is a valid IP address
+    Verifica se un indirizzo ip è valido.
     """
 
     try:
@@ -340,58 +416,6 @@ def check_ip(ip):
     except ValueError:
         return False
 
-
-def set_teams_addresses(if_list, up_address, mm_address):
-    """
-    Sets the addresses for the given interfaces, excluding UPLINK and MANAGEMENT
-
-    Parameters
-    ----------
-    if_list : list 
-        list of the interfaces to be set.
-    up_address : str
-        UPLINK interface address.
-    mm_address : str 
-        MANAGEMENT interface address.
-        Indirizzo dell'interfaccia per la Macchina di Management
-    """
-
-    config = load_from_config()
-    nteams = config['NumberOfTeams']
-
-    if_list = get_interfaces_list_noloopback()
-    if_list.pop(if_list.index(config['ManagementInterface']))
-    if_list.pop(if_list.index(config['UplinkInterface']))
-
-    if (up_address):
-        up = int(up_address.split('.')[2])
-    else:
-        print("Waiting 2 sec. for uplink to get the IP address.")
-        time.sleep(2)
-        up = ni.ifaddresses(config['UplinkInterface'])[
-            ni.AF_INET][0]['addr']
-        up = int(up.split('.')[2])
-
-    mm = int(mm_address.split('.')[2])
-
-    ip = 1  # base of the second-last 8 bit of the IP
-
-    for i in range(1, nteams+1):
-        config["Team%dInterface" %
-               (i)] = if_list[0]  # assegno l'interfaccia
-        if_list.pop(0)  # rimuove l'interfaccia appena assegnata
-        flag = False
-        while not flag:
-            if (ip not in (up, mm)):
-                config["Team%dInterfaceAddress" %
-                       (i)] = '172.168.%d.100' % (ip)
-                flag = True
-            ip += 1
-
-
-    disable_interfaces(if_list)
-
-    save_to_config(config)
 
 def fw_rules_interactive(phase):
     config = load_from_config()
@@ -409,7 +433,7 @@ def fw_rules_interactive(phase):
                 """ % (config['NumberOfTeams']))
     config['Log'] = input("""
                 Chosse logging mode:
-
+                true -> log all
                 false -> no logging
                 value -> set a limit (eg. 3/sec, 3/min). If you omit the time measure, the default wil be in seconds.
                 
@@ -443,12 +467,16 @@ def fw_rules(phase):
         print(response.stdout)
 
     except KeyError as identifier:
+        # print(identifier)
         print("ERROR! Check your config.")
     except subprocess.CalledProcessError as identifier:
         print(identifier)
 
 
 def disable_interfaces(if_list):
+    # TODO non disabilita le interfacce non usate perché if_list è vuoto
+    # print(if_list)
+    # if(len(if_list) > 0):
     print("\nDisabling unused interfaces...\n")
     for interface in if_list:
         subprocess.run(["ip", "link", "set", "dev", interface, "down"])
