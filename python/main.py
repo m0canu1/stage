@@ -19,7 +19,7 @@ def change_config():
     if_list.pop(if_list.index(mngmt))
 
     # Scelta del numero di squadre
-    set_teams_number(len(if_list))
+    set_teams_number_interactive(len(if_list))
 
     # Indirizzo del Virtual Router
     vr = set_address(0)
