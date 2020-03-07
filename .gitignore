@@ -1,2 +1,6 @@
 python/50-cloud-init.yaml
 python/competition.config
+competition.config
+dhcpd.conf
+.vscode/settings.json
+python/dhcpd copy.conf
