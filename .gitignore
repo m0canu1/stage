@@ -5,3 +5,4 @@ dhcpd.conf
 .vscode/settings.json
 python/dhcpd copy.conf
 .vscode/settings.json
+python/__pycache__/
