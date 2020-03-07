@@ -1,9 +1,6 @@
-python/50-cloud-init.yaml
-python/competition.config
 competition.config
 dhcpd.conf
 .vscode/
 .idea/
-python/dhcpd copy.conf
 python/__pycache__/
 isc-dhcp-server
