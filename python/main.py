@@ -4,7 +4,6 @@ import subprocess
 import argparse
 
 from utils import fw_rules_interactive, create_netplan_config_interactive, fw_rules, create_netplan_config, create_config_file, get_interfaces_list_noloopback, print_config, choose_interface, set_teams_number_interactive, set_teams_addresses, set_address
-from dhcp_server_config import dhcpd_config
 
 vr = ''
 mngmt = ''
@@ -151,8 +150,6 @@ else:
                 fw_rules(1)
             if (args.phase == "2"):
                 fw_rules(2)
-
-            dhcpd_config()
 
         except ValueError as identifier:
             # print("Some of the defined interfaces do not exist. Retry!")
