@@ -116,6 +116,7 @@ then
 
     # SECONDA FASE
 
+    #flush delle regole di forward??
     # accept all sulla catena di forward
     sudo iptables -P FORWARD ACCEPT 
     
