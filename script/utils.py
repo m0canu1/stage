@@ -455,7 +455,8 @@ def fw_rules(phase):
         for i in range(1, config["NumberOfTeams"] + 1):
             tmp.append(config['Team%dInterface' % (i)])
 
-        teams_interfaces = "\"" + ' '.join(tmp) + "\""
+        # teams_interfaces = "\"" + ' '.join(tmp) + "\""
+        teams_interfaces = ' '.join(tmp)
 
         response = subprocess.run(
             ["sudo", "./fwrules", "-p", str(phase), "-u", u_interface, "-m", m_interface, "-r",
